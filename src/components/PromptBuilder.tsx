@@ -126,7 +126,6 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
             className="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="multiple-choice">Pilihan Ganda</option>
-            <option value="true-false">Benar-Salah</option>
             <option value="fill-blank">Isian</option>
           </select>
         </div>
