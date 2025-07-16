@@ -5,14 +5,33 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
-// Memuat environment variables dari file .env.local
+// Memuat environment variables
 dotenv.config({ path: '.env.local' });
 
 const app = express();
-const port = 4000;
+const port = process.env.PORT || 4000; // Gunakan port dari hosting atau fallback ke 4000
 
-app.use(cors());
+// --- PERBAIKAN CORS UNTUK PRODUKSI ---
+const whitelist = ['https://question-generator-for-elementary-s.vercel.app'];
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Izinkan permintaan jika asalnya ada di whitelist ATAU jika tidak ada asal (seperti saat tes di lokal)
+    if (whitelist.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  }
+};
+app.use(cors(corsOptions));
+// --- AKHIR DARI PERBAIKAN CORS ---
+
 app.use(express.json());
+
+app.get('/', (req, res) => {
+  res.send('Backend Server is running!');
+});
+
 
 app.post('/api/generate', async (request, response) => {
   const { prompt } = request.body;
@@ -26,23 +45,6 @@ app.post('/api/generate', async (request, response) => {
     return response.status(500).json({ error: { message: 'Konfigurasi Groq API di server belum diatur.' } });
   }
 
-  // --- PROMPT YANG DISERHANAKAN ---
-  const system_prompt = `Anda adalah guru SD ahli dari Indonesia. Anda harus mengikuti semua aturan dengan ketat.
-  ATURAN KUALITAS:
-  1.  Selalu gunakan Bahasa Indonesia.
-  2.  Untuk soal matematika, hitung dulu jawabannya untuk memastikan kebenaran.
-  3.  Pilihan jawaban pengecoh harus masuk akal.
-
-  ATURAN FORMAT JSON (SANGAT PENTING):
-  -   Jika diminta membuat "Pilihan Ganda": "options" harus berisi array 4 string, dan "correctAnswer" berisi indeks jawaban (0-3).
-  -   Jika diminta membuat "Isian": "options" harus berupa array kosong [], dan "correctAnswer" berisi string jawaban singkatnya.
-  -   Output akhir HARUS HANYA berupa objek JSON yang valid tanpa teks tambahan, dengan satu kunci utama "questions".`;
-
-  const user_prompt = `Permintaan Pengguna: "${prompt}".
-  Patuhi ATURAN FORMAT JSON yang sudah dijelaskan.
-  Struktur objek soal: "question" (string), "options" (array), "correctAnswer" (number atau string), "subject" (string), "grade" (string), "difficulty" (string).`;
-  // --- AKHIR DARI PROMPT ---
-
   try {
     const groqResponse = await fetch(
       "https://api.groq.com/openai/v1/chat/completions",
@@ -54,11 +56,11 @@ app.post('/api/generate', async (request, response) => {
         },
         body: JSON.stringify({
           messages: [
-            { role: "system", content: system_prompt },
-            { role: "user", content: user_prompt }
+            { role: "system", content: 'You are a helpful assistant that generates a valid JSON object. The root object must have a key "questions".' },
+            { role: "user", content: `Generate questions based on this prompt: "${prompt}". Each object in the "questions" array must have keys: "question", "options", "correctAnswer", "subject", "grade", and "difficulty".` }
           ],
           model: "llama3-8b-8192",
-          temperature: 0.6,
+          temperature: 0.7,
           max_tokens: 2048,
           response_format: { type: "json_object" },
         }),
@@ -72,10 +74,6 @@ app.post('/api/generate', async (request, response) => {
     }
     
     const generatedText = aiResponse.choices[0]?.message?.content;
-    if (!generatedText) {
-        throw new Error("AI tidak memberikan konten jawaban.");
-    }
-
     const parsedJson = JSON.parse(generatedText);
     return response.status(200).json(parsedJson);
 
