@@ -10,12 +10,11 @@ dotenv.config({ path: '.env.local' });
 
 const app = express();
 // Gunakan port dari hosting atau fallback ke 4000
-const port = process.env.PORT || 4000; 
+const port = process.env.PORT || 4000;
+// --- PERBAIKAN UTAMA: Gunakan 0.0.0.0 untuk hosting ---
+const host = '0.0.0.0';
 
-// --- PERBAIKAN CORS: Izinkan semua origin ---
 app.use(cors());
-// --- AKHIR DARI PERBAIKAN ---
-
 app.use(express.json());
 
 // Endpoint untuk memeriksa apakah server berjalan
@@ -73,6 +72,7 @@ app.post('/api/generate', async (request, response) => {
   }
 });
 
-app.listen(port, () => {
-  console.log(`✅ Backend server berjalan di http://localhost:${port}`);
+// --- PERBAIKAN UTAMA: Server sekarang berjalan di host yang benar ---
+app.listen(port, host, () => {
+  console.log(`✅ Backend server berjalan di http://${host}:${port}`);
 });
