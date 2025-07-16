@@ -23,7 +23,7 @@ function App() {
     
     try {
       // Ganti URL ini dengan URL backend Anda yang sebenarnya dari Railway
-      const backendUrl = 'https://question-generator-f-ary-s.up.railway.app/api/generate';
+      const backendUrl = '/api/generate';
 
       const response = await fetch(backendUrl, {
         method: 'POST',
