@@ -22,26 +22,30 @@ function App() {
     setQuestions([]);
     
     try {
-      const response = await fetch('question-generator-for-elementary-students-production.up.railway.app', {
+      // Ganti URL ini dengan URL backend Anda yang sebenarnya dari Railway
+      const backendUrl = 'https://question-generator-f-ary-s.up.railway.app/api/generate';
+
+      const response = await fetch(backendUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
       });
 
+      // --- PERBAIKAN UTAMA: BACA RESPON HANYA SEKALI ---
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => response.text());
-        let friendlyErrorMessage = errorData?.error?.message || errorData || 'Terjadi error yang tidak diketahui.';
+        // Sekarang kita gunakan 'data' yang sudah dibaca
+        let friendlyErrorMessage = data?.error?.message || 'Terjadi error yang tidak diketahui.';
         
         if (String(friendlyErrorMessage).toLowerCase().includes('service unavailable')) {
           friendlyErrorMessage = "Layanan AI sedang sibuk atau tidak tersedia. Silakan coba lagi dalam beberapa saat.";
-        } else if (String(friendlyErrorMessage).toLowerCase().includes('failed to fetch')) {
-          friendlyErrorMessage = "Gagal terhubung ke server backend. Pastikan server backend Anda (node server.mjs) berjalan.";
         }
         
         throw new Error(friendlyErrorMessage);
       }
+      // --- AKHIR DARI PERBAIKAN ---
 
-      const data = await response.json();
       if (data.questions && Array.isArray(data.questions)) {
         setQuestions(data.questions);
         setCurrentStep(4);
@@ -51,7 +55,12 @@ function App() {
       
     } catch (error) {
       console.error('Error generating questions:', error);
-      alert(`Gagal membuat soal: ${error.message}`);
+      // Menangani error "Failed to fetch" secara spesifik
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+          alert("Gagal terhubung ke server backend. Pastikan server backend Anda online dan tidak ada masalah CORS.");
+      } else {
+          alert(`Gagal membuat soal: ${error.message}`);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -106,7 +115,7 @@ function App() {
           {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
           {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
           {currentStep === 3 && <PromptBuilder customPrompt={customPrompt} onPromptChange={setCustomPrompt} subject={selectedSubject} grade={selectedGrade} />}
-          {currentStep === 4 && <QuestionDisplay questions={questions} isGenerating={isGenerating} onRegenerateQuestions={() => handleGenerateQuestions(customPrompt)} prompt={customPrompt} />}
+          {currentStep === 4 && <QuestionDisplay questions={questions} isGenerating={isGenerating} onRegenerateQuestions={() => handleGenerateQuestions(prompt)} prompt={customPrompt} />}
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center mt-12 gap-4">
@@ -132,5 +141,4 @@ function App() {
   );
 }
 
-// Hanya ada satu export di akhir file
 export default App;
