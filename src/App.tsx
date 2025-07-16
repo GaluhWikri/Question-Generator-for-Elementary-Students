@@ -22,7 +22,7 @@ function App() {
     setQuestions([]);
     
     try {
-      const response = await fetch('http://localhost:4000/api/generate', {
+      const response = await fetch('https://nama-proyek-anda.up.railway.app/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
