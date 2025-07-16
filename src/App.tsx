@@ -22,8 +22,8 @@ function App() {
     setQuestions([]);
     
     try {
-      // Ganti URL ini dengan URL backend Anda yang sebenarnya dari Railway
-      const backendUrl = '/api/generate';
+      // Ganti URL ini jika Anda men-deploy ke alamat yang berbeda
+      const backendUrl = 'http://localhost:4000/api/generate';
 
       const response = await fetch(backendUrl, {
         method: 'POST',
@@ -31,20 +31,15 @@ function App() {
         body: JSON.stringify({ prompt }),
       });
 
-      // --- PERBAIKAN UTAMA: BACA RESPON HANYA SEKALI ---
       const data = await response.json();
 
       if (!response.ok) {
-        // Sekarang kita gunakan 'data' yang sudah dibaca
         let friendlyErrorMessage = data?.error?.message || 'Terjadi error yang tidak diketahui.';
-        
         if (String(friendlyErrorMessage).toLowerCase().includes('service unavailable')) {
           friendlyErrorMessage = "Layanan AI sedang sibuk atau tidak tersedia. Silakan coba lagi dalam beberapa saat.";
         }
-        
         throw new Error(friendlyErrorMessage);
       }
-      // --- AKHIR DARI PERBAIKAN ---
 
       if (data.questions && Array.isArray(data.questions)) {
         setQuestions(data.questions);
@@ -55,9 +50,8 @@ function App() {
       
     } catch (error) {
       console.error('Error generating questions:', error);
-      // Menangani error "Failed to fetch" secara spesifik
       if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-          alert("Gagal terhubung ke server backend. Pastikan server backend Anda online dan tidak ada masalah CORS.");
+          alert("Gagal terhubung ke server backend. Pastikan server backend Anda (node server.mjs) berjalan.");
       } else {
           alert(`Gagal membuat soal: ${error.message}`);
       }
@@ -115,7 +109,14 @@ function App() {
           {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
           {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
           {currentStep === 3 && <PromptBuilder customPrompt={customPrompt} onPromptChange={setCustomPrompt} subject={selectedSubject} grade={selectedGrade} />}
-          {currentStep === 4 && <QuestionDisplay questions={questions} isGenerating={isGenerating} onRegenerateQuestions={() => handleGenerateQuestions(prompt)} prompt={customPrompt} />}
+          
+          {/* --- PERBAIKAN UTAMA ADA DI SINI --- */}
+          {currentStep === 4 && <QuestionDisplay 
+            questions={questions} 
+            isGenerating={isGenerating} 
+            onRegenerateQuestions={() => handleGenerateQuestions(customPrompt)} // Menggunakan 'customPrompt' yang benar
+            prompt={customPrompt} 
+          />}
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-center mt-12 gap-4">
@@ -129,7 +130,7 @@ function App() {
               Lanjutkan
             </button>
           )}
-          {currentStep === 3 && <QuestionGenerator onGenerateQuestions={handleGenerateQuestions} isGenerating={isGenerating} disabled={!canProceedToNext()} prompt={customPrompt} />}
+          {currentStep === 3 && <QuestionGenerator onGenerateQuestions={() => handleGenerateQuestions(customPrompt)} isGenerating={isGenerating} disabled={!canProceedToNext()} prompt={customPrompt} />}
           {currentStep === 4 && (
             <button onClick={resetForm} className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors">
               Buat Soal Baru
