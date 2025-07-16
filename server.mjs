@@ -5,21 +5,19 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
-// Memuat environment variables
 dotenv.config({ path: '.env.local' });
 
 const app = express();
-// Gunakan port dari hosting atau fallback ke 4000
 const port = process.env.PORT || 4000;
-// --- PERBAIKAN UTAMA: Gunakan 0.0.0.0 untuk hosting ---
 const host = '0.0.0.0';
 
+// --- Konfigurasi CORS Paling Sederhana dan Terbuka ---
 app.use(cors());
 app.use(express.json());
 
-// Endpoint untuk memeriksa apakah server berjalan
+// Endpoint untuk memeriksa status server
 app.get('/', (req, res) => {
-  res.send('Backend Server is running!');
+  res.json({ status: 'ok', message: 'Backend Server is running!', version: '1.1' });
 });
 
 app.post('/api/generate', async (request, response) => {
@@ -72,7 +70,6 @@ app.post('/api/generate', async (request, response) => {
   }
 });
 
-// --- PERBAIKAN UTAMA: Server sekarang berjalan di host yang benar ---
 app.listen(port, host, () => {
   console.log(`✅ Backend server berjalan di http://${host}:${port}`);
 });
