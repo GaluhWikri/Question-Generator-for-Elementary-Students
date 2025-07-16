@@ -16,8 +16,28 @@ app.use(cors());
 app.use(express.json());
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend Server is running!', version: '1.2-final' });
+  res.json({ status: 'ok', message: 'Backend Server is running!', version: '20.0-master-prompt' });
 });
+
+// Fungsi pembersih JSON yang sudah ada
+function parseDirtyJson(dirtyJson) {
+  const match = dirtyJson.match(/```json\s*([\s\S]*?)\s*```/);
+  let jsonString = dirtyJson;
+  if (match && match[1]) {
+    jsonString = match[1];
+  }
+  try {
+    return JSON.parse(jsonString);
+  } catch (e) {
+    let cleanedString = jsonString.replace(/,\s*([\]}])/g, '$1');
+    try {
+        return JSON.parse(cleanedString);
+    } catch (finalError) {
+        throw new Error("AI mengembalikan format JSON yang tidak bisa diperbaiki.");
+    }
+  }
+}
+
 
 app.post('/api/generate', async (request, response) => {
   const { prompt } = request.body;
@@ -31,29 +51,41 @@ app.post('/api/generate', async (request, response) => {
     return response.status(500).json({ error: { message: 'Konfigurasi Groq API di server belum diatur.' } });
   }
 
-  // --- PROMPT FINAL DENGAN ATURAN SUPER KETAT ---
-  const system_prompt = `Anda adalah AI super canggih yang bertugas sebagai guru pembuat soal SD di Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang sempurna. Patuhi SEMUA aturan berikut tanpa kecuali.
+  // --- PROMPT FINAL DENGAN LOGIKA BERLAPIS DAN VERIFIKASI DIRI ---
+  const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia yang sangat teliti, presisi, dan anti-salah. Misi utama Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat untuk semua mata pelajaran (Matematika, Bahasa Indonesia, IPA, IPS, Seni Budaya, PJOK).
 
-  ATURAN #1: BAHASA
-  - Seluruh teks, termasuk pertanyaan, pilihan jawaban, dan semua nilai string dalam JSON, WAJIB menggunakan Bahasa Indonesia yang baik dan benar. JANGAN PERNAH menggunakan Bahasa Inggris.
+  ### PROSES BERPIKIR WAJIB (Ikuti langkah demi langkah tanpa kecuali):
+  1.  **ANALISIS PERMINTAAN:** Pahami permintaan pengguna secara mendalam: Mata Pelajaran, Topik, Kelas, Tingkat Kesulitan, Jumlah Soal, dan Jenis Soal.
+  
+  2.  **PEMBUATAN KONTEN INTERNAL:**
+      -   Buat draf pertanyaan dalam Bahasa Indonesia yang **SESUAI** dengan semua parameter dari Langkah 1.
+      -   **Jika soal MATEMATIKA, HITUNG jawabannya dengan cermat. Tuliskan perhitunganmu dalam pikiranmu.** Contoh: "Permintaan adalah akar dari 144. Aku tahu 12 * 12 = 144. Jawabannya PASTI 12."
+      -   Untuk mata pelajaran lain (IPA, IPS, dll.), pastikan faktanya akurat dan relevan dengan kurikulum SD di Indonesia.
+      -   Tentukan jawaban yang benar (\`correctAnswer\`).
+      -   Buat 3 pilihan jawaban pengecoh yang relevan, masuk akal, tetapi salah.
+  
+  3.  **VERIFIKASI DIRI & KOREKSI (Langkah Wajib Kedua):**
+      -   Periksa kembali konten yang baru saja Anda buat. Apakah jawaban matematisnya sudah 100% akurat? Apakah faktanya benar? Apakah tingkat kesulitannya sesuai? Jika ada kesalahan, **PERBAIKI SEKARANG**.
+  
+  4.  **PENYUSUNAN & VERIFIKASI JSON FINAL:**
+      -   Susun konten yang sudah terverifikasi ke dalam format JSON.
+      -   Periksa kembali JSON tersebut. Apakah sudah 100% valid? Apakah tidak ada teks tambahan di luar JSON? Apakah kunci utamanya adalah "questions"?
+      -   Kirimkan HANYA JSON yang sudah lolos semua verifikasi.
 
-  ATURAN #2: AKURASI & KUALITAS
-  - Jika permintaan adalah soal matematika, Anda WAJIB melakukan proses berpikir internal: 1. Baca soal. 2. Hitung jawabannya dengan teliti. 3. Tetapkan jawaban yang benar. 4. Baru buat tiga pilihan pengecoh yang salah namun masuk akal. Jangan pernah menebak jawaban matematika.
-  - Pilihan jawaban pengecoh harus relevan dengan pertanyaan.
+  ### ATURAN OUTPUT FINAL:
+  -   Output HARUS HANYA berupa satu objek JSON yang valid.
+  -   **JANGAN PERNAH** menambahkan teks pembuka atau penutup.
+  -   **VARIASI:** Setiap permintaan adalah permintaan baru. Buat soal yang berbeda setiap saat.
+  -   **JENIS SOAL:**
+      -   **Pilihan Ganda**: \`options\` harus array 4 string, \`correctAnswer\` adalah indeks (angka 0-3).
+      -   **Isian**: \`options\` harus array kosong \`[]\`, \`correctAnswer\` adalah jawaban singkat (string).`;
 
-  ATURAN #3: FORMAT JSON
-  - Output Anda HARUS HANYA berupa objek JSON yang valid. Jangan ada teks pembuka, penutup, atau penjelasan apa pun di luar JSON.
-  - Objek JSON ini harus memiliki satu kunci utama: "questions". Nilai dari "questions" adalah sebuah array dari objek-objek soal.
+  const user_prompt = `Gunakan PROSES BERPIKIR WAJIB dan semua ATURAN untuk permintaan ini. Pastikan akurasi dan relevansinya sempurna untuk semua mata pelajaran. Jika diminta soal 'campur', buatlah soal dengan tingkat kesulitan yang bervariasi.
 
-  ATURAN #4: JENIS SOAL (SANGAT PENTING)
-  - Perhatikan permintaan jenis soal dari pengguna dan gunakan format yang benar:
-  - Untuk "Pilihan Ganda": Kunci "options" harus berisi sebuah array dengan 4 string. "correctAnswer" adalah indeks jawaban yang benar (angka dari 0 sampai 3).
-  - Untuk "Isian": Kunci "options" HARUS berupa sebuah array kosong ([]). "correctAnswer" adalah jawaban singkatnya dalam bentuk string. Contoh: {"question": "Ibukota Indonesia adalah...", "options": [], "correctAnswer": "Jakarta", ...}`;
-
-  const user_prompt = `Berdasarkan permintaan pengguna berikut, hasilkan JSON sesuai dengan SEMUA aturan yang telah ditetapkan dalam peran sistem Anda.
-
-  Permintaan Pengguna: "${prompt}"`;
-  // --- AKHIR DARI PROMPT FINAL ---
+  **Permintaan Pengguna:** "${prompt}"
+  
+  (ID Variasi Unik: ${Date.now()})`;
+  // --- AKHIR DARI PROMPT ---
 
   try {
     const groqResponse = await fetch(
@@ -70,8 +102,8 @@ app.post('/api/generate', async (request, response) => {
             { role: "user", content: user_prompt }
           ],
           model: "llama3-8b-8192",
-          temperature: 0.5, // Dibuat lebih rendah untuk akurasi
-          max_tokens: 2048,
+          temperature: 0.6, // Suhu seimbang untuk akurasi dan variasi
+          max_tokens: 3000,
           response_format: { type: "json_object" },
         }),
       }
@@ -88,7 +120,12 @@ app.post('/api/generate', async (request, response) => {
         throw new Error("AI tidak memberikan konten jawaban.");
     }
 
-    const parsedJson = JSON.parse(generatedText);
+    const parsedJson = parseDirtyJson(generatedText);
+
+    if (!parsedJson.questions) {
+      throw new Error('Kunci "questions" tidak ditemukan dalam respons JSON.');
+    }
+    
     return response.status(200).json(parsedJson);
 
   } catch (error) {
