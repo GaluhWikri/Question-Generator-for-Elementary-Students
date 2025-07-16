@@ -9,29 +9,19 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 const app = express();
-const port = process.env.PORT || 4000; // Gunakan port dari hosting atau fallback ke 4000
+// Gunakan port dari hosting atau fallback ke 4000
+const port = process.env.PORT || 4000; 
 
-// --- PERBAIKAN CORS UNTUK PRODUKSI ---
-const whitelist = ['https://question-generator-for-elementary-s.vercel.app'];
-const corsOptions = {
-  origin: function (origin, callback) {
-    // Izinkan permintaan jika asalnya ada di whitelist ATAU jika tidak ada asal (seperti saat tes di lokal)
-    if (whitelist.indexOf(origin) !== -1 || !origin) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  }
-};
-app.use(cors(corsOptions));
-// --- AKHIR DARI PERBAIKAN CORS ---
+// --- PERBAIKAN CORS: Izinkan semua origin ---
+app.use(cors());
+// --- AKHIR DARI PERBAIKAN ---
 
 app.use(express.json());
 
+// Endpoint untuk memeriksa apakah server berjalan
 app.get('/', (req, res) => {
   res.send('Backend Server is running!');
 });
-
 
 app.post('/api/generate', async (request, response) => {
   const { prompt } = request.body;
