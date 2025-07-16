@@ -44,11 +44,18 @@ function App() {
       
     } catch (error) {
       console.error('Error generating questions:', error);
-      alert(`Gagal membuat soal: ${error.message}`);
+
+      let friendlyErrorMessage = error.message;
+      if (error.message.toLowerCase().includes('service unavailable')) {
+        friendlyErrorMessage = "Layanan AI sedang sibuk atau tidak tersedia saat ini. Silakan coba lagi dalam beberapa saat.";
+      } else if (error.message.toLowerCase().includes('failed to fetch')) {
+        friendlyErrorMessage = "Gagal terhubung ke server backend. Pastikan server backend Anda berjalan.";
+      }
+      
+      alert(`Gagal membuat soal: ${friendlyErrorMessage}`);
     } finally {
       setIsGenerating(false);
-    }
-  };
+    
 
   const canProceedToNext = () => {
     if (currentStep === 1) return selectedSubject !== '';
