@@ -30,8 +30,15 @@ function App() {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => response.text());
-        const errorMessage = errorData?.error?.message || errorData || 'Terjadi error yang tidak diketahui.';
-        throw new Error(errorMessage);
+        let friendlyErrorMessage = errorData?.error?.message || errorData || 'Terjadi error yang tidak diketahui.';
+        
+        if (String(friendlyErrorMessage).toLowerCase().includes('service unavailable')) {
+          friendlyErrorMessage = "Layanan AI sedang sibuk atau tidak tersedia. Silakan coba lagi dalam beberapa saat.";
+        } else if (String(friendlyErrorMessage).toLowerCase().includes('failed to fetch')) {
+          friendlyErrorMessage = "Gagal terhubung ke server backend. Pastikan server backend Anda (node server.mjs) berjalan.";
+        }
+        
+        throw new Error(friendlyErrorMessage);
       }
 
       const data = await response.json();
@@ -44,18 +51,11 @@ function App() {
       
     } catch (error) {
       console.error('Error generating questions:', error);
-
-      let friendlyErrorMessage = error.message;
-      if (error.message.toLowerCase().includes('service unavailable')) {
-        friendlyErrorMessage = "Layanan AI sedang sibuk atau tidak tersedia saat ini. Silakan coba lagi dalam beberapa saat.";
-      } else if (error.message.toLowerCase().includes('failed to fetch')) {
-        friendlyErrorMessage = "Gagal terhubung ke server backend. Pastikan server backend Anda berjalan.";
-      }
-      
-      alert(`Gagal membuat soal: ${friendlyErrorMessage}`);
+      alert(`Gagal membuat soal: ${error.message}`);
     } finally {
       setIsGenerating(false);
-    
+    }
+  };
 
   const canProceedToNext = () => {
     if (currentStep === 1) return selectedSubject !== '';
@@ -74,14 +74,12 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      {/* Penambahan padding responsif di container utama */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
             <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full">
               <Brain className="w-8 h-8 text-white" />
             </div>
-            {/* Ukuran teks responsif */}
             <h1 className="text-3xl sm:text-4xl font-bold text-white">AI Question Generator</h1>
           </div>
           <p className="text-gray-300 text-base sm:text-lg">
@@ -97,7 +95,6 @@ function App() {
                   {step}
                 </div>
                 {step < 4 && (
-                  // Lebar garis responsif
                   <div className={`w-8 sm:w-16 h-1 mx-2 ${currentStep > step ? 'bg-gradient-to-r from-purple-600 to-blue-600' : 'bg-gray-700'}`} />
                 )}
               </div>
@@ -112,7 +109,6 @@ function App() {
           {currentStep === 4 && <QuestionDisplay questions={questions} isGenerating={isGenerating} onRegenerateQuestions={() => handleGenerateQuestions(customPrompt)} prompt={customPrompt} />}
         </div>
 
-        {/* Tombol navigasi responsif */}
         <div className="flex flex-col sm:flex-row items-center justify-center mt-12 gap-4">
           {currentStep > 1 && currentStep < 4 && (
             <button onClick={() => setCurrentStep(currentStep - 1)} className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
@@ -136,4 +132,5 @@ function App() {
   );
 }
 
+// Hanya ada satu export di akhir file
 export default App;
