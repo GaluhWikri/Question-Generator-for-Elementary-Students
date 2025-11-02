@@ -117,7 +117,7 @@ app.post('/api/generate', async (request, response) => {
             { role: "system", content: system_prompt },
             { role: "user", content: user_prompt }
           ],
-          model: "llama-3.1-8b-32768", // DIGANTI ke model Llama 3.1 8B yang baru dan stabil
+          model: "llama-3.1-8b-32768", // Menggunakan model Llama 3.1 8B, berdasarkan Groq Docs terbaru
           temperature: 0.6, // Suhu seimbang untuk akurasi dan variasi
           max_tokens: 3000,
           response_format: { type: "json_object" },
