@@ -117,7 +117,7 @@ app.post('/api/generate', async (request, response) => {
             { role: "system", content: system_prompt },
             { role: "user", content: user_prompt }
           ],
-          model: "llama3-70b-8192", // DIGANTI ke model yang benar-benar aktif
+          model: "llama-3.1-405b-8192", // Model terbaru Llama 3.1
           temperature: 0.6, // Suhu seimbang untuk akurasi dan variasi
           max_tokens: 3000,
           response_format: { type: "json_object" },
