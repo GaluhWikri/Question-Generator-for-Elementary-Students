@@ -5,8 +5,8 @@ import cors from 'cors';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
-// Memuat environment variables
-dotenv.config({ path: '.env.local' });
+// Hapus baris ini karena Shipper sudah menyediakan variabel lingkungan secara langsung.
+// dotenv.config({ path: '.env.local' });
 
 const app = express();
 // Mengubah port fallback ke 8080, port yang lebih umum di lingkungan container
@@ -60,6 +60,7 @@ app.post('/api/generate', async (request, response) => {
     return response.status(400).json({ error: { message: 'Prompt tidak boleh kosong.' } });
   }
 
+  // Sekarang process.env.GROQ_API_KEY akan langsung membaca dari variabel Shipper
   const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
   if (!GROQ_API_KEY) {
