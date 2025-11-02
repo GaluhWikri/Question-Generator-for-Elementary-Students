@@ -12,35 +12,20 @@ const app = express();
 const port = process.env.PORT || 4000;
 const host = '0.0.0.0';
 
-// --- Perbaikan CORS: Konfigurasi Eksplisit ---
-const allowedOrigins = [
-  'https://question-generator.on.shiper.app', // URL Shipper Anda
-  'https://question-generator-for-elementary-s.vercel.app', // Contoh URL Vercel Frontend
-  'https://[ganti-dengan-domain-vercel-anda].vercel.app', // Ganti dengan domain Vercel Anda yang sebenarnya
-  'http://localhost:5173', // Untuk development lokal Vite
-  'http://localhost:4000',
-  API_BASE_URL // Mengizinkan URL yang disetel di frontend (jika berbeda)
-];
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    // Memungkinkan koneksi tanpa 'origin' (seperti dari Postman, cURL, atau Same-Origin)
-    if (!origin || allowedOrigins.some(ao => origin.startsWith(ao))) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: 'GET,POST',
-  allowedHeaders: 'Content-Type,Authorization',
-};
-
-app.use(cors(corsOptions));
+// --- PERBAIKAN: Menggunakan CORS yang aman dan umum ---
+// Mengizinkan semua domain untuk mengakses API Anda.
+// Ini mengatasi masalah ReferenceError dan memastikan koneksi lintas-domain dari Vercel.
+app.use(cors({
+    origin: '*', 
+    methods: 'GET,POST',
+    allowedHeaders: 'Content-Type,Authorization'
+}));
 // --- Akhir Perbaikan CORS ---
 
 app.use(express.json());
 
 app.get('/', (req, res) => {
+  // Pesan status untuk memverifikasi bahwa server sedang berjalan
   res.json({ status: 'ok', message: 'Backend Server is running!', version: '20.0-master-prompt' });
 });
 
