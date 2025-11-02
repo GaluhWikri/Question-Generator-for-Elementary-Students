@@ -9,12 +9,12 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 const app = express();
-const port = process.env.PORT || 4000;
+// Mengubah port fallback ke 8080, port yang lebih umum di lingkungan container
+const port = process.env.PORT || 8080; 
 // Variabel host dihapus, biarkan Express/Node.js mendengarkan secara default.
 
 // --- PERBAIKAN: Menggunakan CORS yang aman dan umum ---
 // Mengizinkan semua domain untuk mengakses API Anda.
-// Ini mengatasi masalah ReferenceError dan memastikan koneksi lintas-domain dari Vercel.
 app.use(cors({
     origin: '*', 
     methods: 'GET,POST',
