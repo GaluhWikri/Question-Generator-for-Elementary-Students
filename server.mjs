@@ -11,18 +11,23 @@ dotenv.config({ path: '.env.local' });
 const app = express();
 // Mengubah port fallback ke 8080, port yang lebih umum di lingkungan container
 const port = process.env.PORT || 8080; 
-// Variabel host dihapus, biarkan Express/Node.js mendengarkan secara default.
 
-// --- PERBAIKAN: Menggunakan CORS yang aman dan umum ---
-// Mengizinkan semua domain untuk mengakses API Anda.
+// --- PERBAIKAN CORS KRITIS UNTUK PREFLIGHT OPTIONS ---
+// Menggunakan middleware CORS
 app.use(cors({
     origin: '*', 
-    methods: 'GET,POST',
-    allowedHeaders: 'Content-Type,Authorization'
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE', // Tambahkan semua metode yang diperlukan
+    preflightContinue: false,
+    optionsSuccessStatus: 204 // Merespons OPTIONS dengan status 204
 }));
-// --- Akhir Perbaikan CORS ---
 
 app.use(express.json());
+
+// --- EXPLICITLY HANDLE OPTIONS REQUESTS ---
+// Untuk memastikan permintaan OPTIONS (preflight) tidak dicegat
+app.options('/api/generate', cors()); 
+// --- Akhir Perbaikan CORS ---
+
 
 app.get('/', (req, res) => {
   // Pesan status untuk memverifikasi bahwa server sedang berjalan
