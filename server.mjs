@@ -10,7 +10,7 @@ dotenv.config({ path: '.env.local' });
 
 const app = express();
 const port = process.env.PORT || 4000;
-const host = '0.0.0.0';
+// Variabel host dihapus, biarkan Express/Node.js mendengarkan secara default.
 
 // --- PERBAIKAN: Menggunakan CORS yang aman dan umum ---
 // Mengizinkan semua domain untuk mengakses API Anda.
@@ -144,6 +144,6 @@ app.post('/api/generate', async (request, response) => {
   }
 });
 
-app.listen(port, host, () => {
-  console.log(`✅ Backend server berjalan di http://${host}:${port}`);
+app.listen(port, () => {
+  console.log(`✅ Backend server berjalan di port ${port}`);
 });
