@@ -128,7 +128,16 @@ app.post('/api/generate', async (request, response) => {
     const aiResponse = await groqResponse.json();
     
     if (!groqResponse.ok) {
-        return response.status(500).json({ error: { message: `Groq API request failed: ${aiResponse.error.message}` } });
+        // --- PERBAIKAN PENTING DI SINI ---
+        // Mendapatkan pesan error yang lebih spesifik dari API Groq
+        const errorMessage = aiResponse.error?.message || `Groq API request failed with status: ${groqResponse.status}`;
+        console.error('Groq API Error:', errorMessage);
+        return response.status(groqResponse.status).json({ 
+            error: { 
+                message: `Gagal memanggil Groq API. Status: ${groqResponse.status}. Pesan: ${errorMessage}` 
+            } 
+        });
+        // --- Akhir Perbaikan ---
     }
     
     const generatedText = aiResponse.choices[0]?.message?.content;
@@ -146,7 +155,8 @@ app.post('/api/generate', async (request, response) => {
 
   } catch (error) {
     console.error('Internal Server Error:', error);
-    return response.status(500).json({ error: { message: error.message } });
+    // Perbarui pesan error untuk lebih jelas di sisi frontend
+    return response.status(500).json({ error: { message: `Internal Server Error: ${error.message}` } });
   }
 });
 
