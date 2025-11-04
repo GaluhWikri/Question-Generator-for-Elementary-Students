@@ -117,7 +117,7 @@ app.post('/api/generate', async (request, response) => {
             { role: "system", content: system_prompt },
             { role: "user", content: user_prompt }
           ],
-          model: "gemma-7b-it", // Menggunakan model Gemma yang stabil dan didukung Groq
+          model: "mixtral-8x22b-32768", // Menggunakan model Mixtral 8x22B yang terbaru dan stabil
           temperature: 0.6, // Suhu seimbang untuk akurasi dan variasi
           max_tokens: 3000,
           response_format: { type: "json_object" },
