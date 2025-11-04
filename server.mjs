@@ -85,12 +85,12 @@ app.post('/api/generate', async (request, response) => {
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: user_query }] }],
-          // MENGGANTI KUNCI 'config' menjadi 'generationConfig'
+          // PINDAH: systemInstruction dipindahkan ke level root di sini
+          systemInstruction: system_prompt, 
           generationConfig: {
-            systemInstruction: system_prompt,
+            // responseMimeType tetap di sini untuk forcing JSON
             responseMimeType: "application/json",
           },
-          // TIDAK PERLU model di sini karena sudah ada di URL
         }),
       }
     );
