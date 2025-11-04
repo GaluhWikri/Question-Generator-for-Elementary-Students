@@ -85,15 +85,12 @@ app.post('/api/generate', async (request, response) => {
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: user_query }] }],
-          // Menggunakan response_format untuk memastikan output JSON
-          config: {
+          // MENGGANTI KUNCI 'config' menjadi 'generationConfig'
+          generationConfig: {
             systemInstruction: system_prompt,
             responseMimeType: "application/json",
-            // Anda dapat menambahkan responseSchema jika diperlukan, 
-            // tetapi system instruction biasanya sudah cukup.
           },
-          // Menggunakan model Gemini yang stabil
-          model: "gemini-2.5-flash-preview-09-2025", 
+          // TIDAK PERLU model di sini karena sudah ada di URL
         }),
       }
     );
