@@ -58,37 +58,21 @@ app.post('/api/generate', async (request, response) => {
   }
 
   // --- PROMPT FINAL DENGAN LOGIKA BERLAPIS DAN VERIFIKASI DIRI ---
-  // Menggunakan prompt yang diminta pengguna dengan penyesuaian untuk Gemini
-  const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia yang sangat teliti, presisi, dan anti-salah. Misi utama Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat untuk semua mata pelajaran (Matematika, Bahasa Indonesia, IPA, IPS, Seni Budaya, PJOK).
+  // Menyederhanakan prompt agar AI lebih fokus ke format JSON
+  const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat berdasarkan permintaan.
 
-  ### PROSES BERPIKIR WAJIB (Ikuti langkah demi langkah tanpa kecuali):
-  1.  **ANALISIS PERMINTAAN:** Pahami permintaan pengguna secara mendalam: Mata Pelajaran, Topik, Kelas, Tingkat Kesulitan, Jumlah Soal, dan Jenis Soal.
+  ### ATURAN UTAMA:
+  1.  **Output HARUS HANYA** berupa satu objek JSON.
+  2.  Kunci utama hasil HARUS "questions".
+  3.  **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (seperti \`\`\`json) di luar objek JSON.
   
-  2.  **PEMBUATAN KONTEN INTERNAL:**
-      -   Buat draf pertanyaan dalam Bahasa Indonesia yang **SESUAI** dengan semua parameter dari Langkah 1.
-      -   **Jika soal MATEMATIKA, HITUNG jawabannya dengan cermat. Tuliskan perhitunganmu dalam pikiranmu.** Contoh: "Permintaan adalah akar dari 144. Aku tahu 12 * 12 = 144. Jawabannya PASTI 12."
-      -   Untuk mata pelajaran lain (IPA, IPS, dll.), pastikan faktanya akurat dan relevan dengan kurikulum SD di Indonesia.
-      -   Tentukan jawaban yang benar (\`correctAnswer\`).
-      -   Buat 3 pilihan jawaban pengecoh yang relevan, masuk akal, tetapi salah.
-  
-  3.  **VERIFIKASI DIRI & KOREKSI (Langkah Wajib Kedua):**
-      -   Periksa kembali konten yang baru saja Anda buat. Apakah jawaban matematisnya sudah 100% akurat? Apakah faktanya benar? Apakah tingkat kesulitannya sesuai? Jika ada kesalahan, **PERBAIKI SEKARANG**.
-  
-  4.  **PENYUSUNAN & VERIFIKASI JSON FINAL:**
-      -   Susun konten yang sudah terverifikasi ke dalam format JSON.
-      -   Periksa kembali JSON tersebut. Apakah sudah 100% valid? Apakah tidak ada teks tambahan di luar JSON? Apakah kunci utamanya adalah "questions"?
-      -   Kirimkan HANYA JSON yang sudah lolos semua verifikasi.
-
-  ### ATURAN OUTPUT FINAL:
-  -   Output HARUS HANYA berupa satu objek JSON yang valid.
-  -   **JANGAN PERNAH** menambahkan teks pembuka, penjelasan, atau penutup.
-  -   **VARIASI:** Setiap permintaan adalah permintaan baru. Buat soal yang berbeda setiap saat.
-  -   **JENIS SOAL:**
-      -   **Pilihan Ganda**: \`options\` harus array 4 string, \`correctAnswer\` adalah indeks (angka 0-3).
-      -   **Isian**: \`options\` harus array kosong \`[]\`, \`correctAnswer\` adalah jawaban singkat (string).`;
-  // --- AKHIR DARI PROMPT BARU ---
+  ### STRUKTUR SOAL:
+  -   **Pilihan Ganda**: \`options\` array (4 string), \`correctAnswer\` adalah indeks (angka 0-3).
+  -   **Isian**: \`options\` array kosong \`[]\`, \`correctAnswer\` adalah jawaban singkat (string).
+  -   Semua konten harus sesuai dengan kurikulum dan mudah dipahami anak SD.`;
 
   const user_query = `Buatkan soal berdasarkan permintaan pengguna ini: "${prompt}"`;
+  // --- AKHIR DARI PROMPT BARU ---
 
   try {
     // Endpoint ke Gemini API
@@ -103,7 +87,7 @@ app.post('/api/generate', async (request, response) => {
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: user_query }] }],
-          // systemInstruction diletakkan di level root (sudah benar)
+          // systemInstruction diletakkan di level root
           systemInstruction: {
             parts: [{ text: system_prompt }] 
           }, 
@@ -129,13 +113,22 @@ app.post('/api/generate', async (request, response) => {
     
     // Hasil dari Gemini API sedikit berbeda
     const generatedText = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
+    const finishReason = aiResponse.candidates?.[0]?.finishReason;
+    
     if (!generatedText) {
-         // Cek jika ada blocked reason
-        const blockReason = aiResponse.candidates?.[0]?.finishReason;
-        if (blockReason) {
-            throw new Error(`Permintaan diblokir oleh filter keamanan AI. Alasan: ${blockReason}`);
+         // Cek jika diblokir karena alasan keamanan (SAFETY)
+        if (finishReason === 'SAFETY') {
+            throw new Error(`Permintaan diblokir oleh filter keamanan AI. Coba ubah topik soal Anda.`);
         }
-        throw new Error("AI tidak memberikan konten jawaban. Mungkin ada masalah pemblokiran.");
+        
+        // Jika alasannya STOP (model berhenti normal) dan tidak ada teks, 
+        // berarti model gagal menghasilkan JSON yang valid atau lengkap sesuai instruksi.
+        if (finishReason === 'STOP') {
+            throw new Error(`AI gagal menghasilkan output JSON yang valid atau lengkap. Coba ulangi atau sederhanakan permintaan.`);
+        }
+        
+        // Kasus lainnya (MAX_TOKENS, dll.)
+        throw new Error(`AI tidak memberikan konten jawaban. Alasan henti: ${finishReason || 'UNKNOWN'}.`);
     }
 
     const parsedJson = parseDirtyJson(generatedText);
