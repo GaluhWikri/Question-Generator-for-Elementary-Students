@@ -9,12 +9,6 @@ import QuestionGenerator from './components/QuestionGenerator';
 import QuestionDisplay from './components/QuestionDisplay';
 import { Question } from './types/Question';
 
-// Tentukan base URL untuk backend
-// Gunakan environment variable VITE_API_BASE_URL (dari .env atau platform deployment)
-// Default ke 'http://localhost:4000' untuk pengembangan lokal
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-
-
 function App() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
@@ -22,65 +16,48 @@ function App() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
+  // State baru untuk menyimpan tingkat kesulitan yang diminta
+  const [requestedDifficulty, setRequestedDifficulty] = useState(''); 
 
   const handleGenerateQuestions = async (prompt: string) => {
     setIsGenerating(true);
     setQuestions([]);
     
     try {
-      // Menggunakan Base URL yang sudah didefinisikan secara dinamis
-      const apiEndpoint = `${API_BASE_URL}/api/generate`;
-      console.log('Mengirim permintaan ke:', apiEndpoint);
+      // Ganti URL ini jika Anda men-deploy ke alamat yang berbeda
+      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+      const apiEndpoint = `${backendUrl}/api/generate`;
 
       const response = await fetch(apiEndpoint, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          // Menambahkan mode 'cors' secara eksplisit (walaupun default)
-          // dan memastikan headers yang diperlukan sudah ada.
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
       });
 
-      // Jika koneksi berhasil tapi status bukan OK
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        let friendlyErrorMessage = errorData?.error?.message || `Server merespons dengan status ${response.status}.`;
-        
-        if (response.status === 500 && String(friendlyErrorMessage).toLowerCase().includes('failed:')) {
-           friendlyErrorMessage = "Gagal memproses permintaan di server backend (masalah API key atau logika).";
-        }
+      const data = await response.json();
 
+      if (!response.ok) {
+        let friendlyErrorMessage = data?.error?.message || 'Terjadi error yang tidak diketahui.';
+        if (String(friendlyErrorMessage).toLowerCase().includes('service unavailable')) {
+          friendlyErrorMessage = "Layanan AI sedang sibuk atau tidak tersedia. Silakan coba lagi dalam beberapa saat.";
+        }
         throw new Error(friendlyErrorMessage);
       }
 
-      const data = await response.json();
-
       if (data.questions && Array.isArray(data.questions)) {
-        // Tambahkan ID unik untuk setiap soal jika belum ada (berguna untuk React key)
-        const questionsWithId = data.questions.map((q: any) => ({
-          ...q,
-          id: q.id || crypto.randomUUID(),
-        }));
-        setQuestions(questionsWithId);
+        setQuestions(data.questions);
         setCurrentStep(4);
       } else {
-        throw new Error("Format respons dari server tidak valid. Kunci 'questions' tidak ditemukan.");
+        throw new Error("Format respons dari server tidak valid.");
       }
       
     } catch (error) {
       console.error('Error generating questions:', error);
-      
-      let alertMessage = `Gagal membuat soal: ${error instanceof Error ? error.message : String(error)}`;
-      
-      // Deteksi kegagalan jaringan (Failed to fetch)
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-          alertMessage = `Gagal terhubung ke server backend di ${API_BASE_URL}. Pastikan server backend Anda berjalan dan variabel lingkungan VITE_API_BASE_URL sudah benar.`;
+      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+          alert("Gagal terhubung ke server backend. Pastikan server backend Anda berjalan dan variabel VITE_API_BASE_URL sudah benar.");
+      } else {
+          alert(`Gagal membuat soal: ${error.message}`);
       }
-      
-      // Ganti alert dengan implementasi UI yang lebih baik di aplikasi nyata
-      alert(alertMessage); 
-      
     } finally {
       setIsGenerating(false);
     }
@@ -99,6 +76,7 @@ function App() {
     setCustomPrompt('');
     setQuestions([]);
     setCurrentStep(1);
+    setRequestedDifficulty(''); // Reset kesulitan juga
   };
 
   return (
@@ -134,13 +112,19 @@ function App() {
         <div className="max-w-4xl mx-auto">
           {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
           {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
-          {currentStep === 3 && <PromptBuilder customPrompt={customPrompt} onPromptChange={setCustomPrompt} subject={selectedSubject} grade={selectedGrade} />}
+          {currentStep === 3 && <PromptBuilder 
+            customPrompt={customPrompt} 
+            onPromptChange={setCustomPrompt} 
+            onDifficultyChange={setRequestedDifficulty} // Meneruskan fungsi update kesulitan
+            subject={selectedSubject} 
+            grade={selectedGrade} />}
           
           {currentStep === 4 && <QuestionDisplay 
             questions={questions} 
             isGenerating={isGenerating} 
-            onRegenerateQuestions={() => handleGenerateQuestions(customPrompt)}
-            prompt={customPrompt} 
+            onRegenerateQuestions={() => handleGenerateQuestions(customPrompt)} 
+            prompt={customPrompt}
+            requestedDifficulty={requestedDifficulty} // Meneruskan kesulitan yang diminta
           />}
         </div>
 

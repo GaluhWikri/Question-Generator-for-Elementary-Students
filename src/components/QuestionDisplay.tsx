@@ -1,7 +1,7 @@
 // src/components/QuestionDisplay.tsx
 
 import React from 'react';
-import { Download, RefreshCw, CheckCircle, FileText, Type } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle, FileText, Type, Target } from 'lucide-react'; // Import Target icon
 import { Question } from '../types/Question';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable'; // Impor autoTable secara langsung
@@ -11,13 +11,15 @@ interface QuestionDisplayProps {
   isGenerating: boolean;
   onRegenerateQuestions: (prompt: string) => void;
   prompt: string;
+  requestedDifficulty: string; // Prop baru
 }
 
 const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
   questions,
   isGenerating,
   onRegenerateQuestions,
-  prompt
+  prompt,
+  requestedDifficulty // Ambil prop baru
 }) => {
 
   const renderContent = (content: any): string => {
@@ -47,7 +49,7 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
         } else {
           answerSection = `Jawaban: ${renderContent(q.correctAnswer)}`;
         }
-        
+
         const questionText = renderContent(q.question);
         return [`${index + 1}. ${questionText}`, answerSection];
       });
@@ -73,7 +75,7 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
           1: { cellWidth: 'auto' },
         }
       });
-      
+
       doc.save(`Soal - ${questions[0]?.subject || 'umum'}.pdf`);
 
     } catch (error) {
@@ -83,11 +85,18 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
   };
 
   const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'Easy': return 'text-green-400 bg-green-400/20';
-      case 'Medium': return 'text-yellow-400 bg-yellow-400/20';
-      case 'Hard': return 'text-red-400 bg-red-400/20';
-      default: return 'text-gray-400 bg-gray-400/20';
+    switch (difficulty.toLowerCase()) {
+      case 'easy':
+      case 'mudah':
+        return 'text-green-400 bg-green-400/20';
+      case 'medium':
+      case 'sedang':
+        return 'text-yellow-400 bg-yellow-400/20';
+      case 'hard':
+      case 'sulit':
+        return 'text-red-400 bg-red-400/20';
+      default:
+        return 'text-gray-400 bg-gray-400/20';
     }
   };
 
@@ -104,20 +113,30 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
   }
 
   if (questions.length === 0) {
-     return (
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700 text-center">
-             <h2 className="text-2xl font-bold text-white mb-2">Gagal Membuat Soal</h2>
-             <p className="text-gray-300">AI tidak berhasil membuat soal untuk permintaan ini. Coba ubah prompt atau topik Anda dan generate ulang.</p>
-        </div>
-     );
+    return (
+      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700 text-center">
+        <h2 className="text-2xl font-bold text-white mb-2">Gagal Membuat Soal</h2>
+        <p className="text-gray-300">AI tidak berhasil membuat soal untuk permintaan ini. Coba ubah prompt atau topik Anda dan generate ulang.</p>
+      </div>
+    );
   }
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Soal yang Dihasilkan</h2>
-          <p className="text-gray-300">{questions.length} soal berhasil dibuat</p>
+          {/* Tampilan Tingkat Kesulitan yang Diminta */}
+          {requestedDifficulty && (
+            <div className="flex items-center text-gray-300 mb-2">
+              <Target className="w-4 h-4 mr-2 text-purple-400" />
+              <span className="font-medium text-sm">Kesulitan yang Diminta:</span>
+              <span className={`ml-2 px-3 py-1 rounded-full text-xs font-semibold uppercase ${getDifficultyColor(requestedDifficulty)}`}>
+                {requestedDifficulty}
+              </span>
+            </div>
+          )}
+          <p className="text-gray-300 text-sm">{questions.length} soal berhasil dibuat</p>
         </div>
         <div className="flex gap-3">
           <button
@@ -146,9 +165,12 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
                 <div className="w-8 h-8 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center text-white font-bold">
                   {index + 1}
                 </div>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(question.difficulty)}`}>
-                  {question.difficulty}
-                </span>
+                {/* Tampilan Kesulitan Soal Individual */}
+                {question.difficulty && (
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${getDifficultyColor(question.difficulty)}`}>
+                    {question.difficulty}
+                  </span>
+                )}
               </div>
               <FileText className="w-5 h-5 text-gray-400" />
             </div>

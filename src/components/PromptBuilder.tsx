@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+// src/components/PromptBuilder.tsx
+
+import React, { useState, useEffect } from 'react'; // Import useEffect
 import { MessageSquare, Lightbulb, Target, Clock, BarChart3 } from 'lucide-react';
 
 interface PromptBuilderProps {
   customPrompt: string;
   onPromptChange: (prompt: string) => void;
+  onDifficultyChange: (difficulty: string) => void; // Prop baru untuk kesulitan
   subject: string;
   grade: string;
 }
@@ -11,6 +14,7 @@ interface PromptBuilderProps {
 const PromptBuilder: React.FC<PromptBuilderProps> = ({ 
   customPrompt, 
   onPromptChange, 
+  onDifficultyChange, // Mengambil prop baru
   subject, 
   grade 
 }) => {
@@ -19,7 +23,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
   const [questionType, setQuestionType] = useState('multiple-choice');
   const [topic, setTopic] = useState('');
 
-  const generatePrompt = () => {
+  const generatePrompt = React.useCallback(() => { // Gunakan useCallback untuk stabilitas
     const subjectMap: { [key: string]: string } = {
       'matematika': 'Matematika',
       'bahasa-indonesia': 'Bahasa Indonesia',
@@ -51,7 +55,9 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
       'fill-blank': 'isian'
     };
 
-    let prompt = `Buatkan ${questionCount} soal ${typeMap[questionType]} untuk mata pelajaran ${subjectMap[subject]} tingkat ${gradeMap[grade]} dengan tingkat kesulitan ${difficultyMap[difficulty]}.`;
+    const displayDifficulty = difficultyMap[difficulty] || difficulty;
+    
+    let prompt = `Buatkan ${questionCount} soal ${typeMap[questionType]} untuk mata pelajaran ${subjectMap[subject]} tingkat ${gradeMap[grade]} dengan tingkat kesulitan ${displayDifficulty}.`;
     
     if (topic) {
       prompt += ` Fokus pada topik: ${topic}.`;
@@ -60,11 +66,16 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
     prompt += ` Pastikan soal sesuai dengan kurikulum SD dan mudah dipahami anak-anak.`;
 
     onPromptChange(prompt);
-  };
+    onDifficultyChange(displayDifficulty); // Memanggil callback untuk menyimpan kesulitan yang sudah diterjemahkan
+  }, [questionCount, difficulty, questionType, topic, subject, grade, onPromptChange, onDifficultyChange]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     generatePrompt();
-  }, [questionCount, difficulty, questionType, topic, subject, grade]);
+  }, [generatePrompt]);
+
+  const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setDifficulty(e.target.value);
+  }
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
@@ -104,7 +115,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
           </div>
           <select
             value={difficulty}
-            onChange={(e) => setDifficulty(e.target.value)}
+            onChange={handleDifficultyChange}
             className="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
           >
             <option value="easy">Mudah</option>
