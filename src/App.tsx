@@ -84,9 +84,7 @@ function App() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full">
-              <Brain className="w-8 h-8 text-white" />
-            </div>
+            <Brain className="w-10 h-10 text-purple-400" />
             <h1 className="text-3xl sm:text-4xl font-bold text-white">AI Question Generator</h1>
           </div>
           <p className="text-gray-300 text-base sm:text-lg">
