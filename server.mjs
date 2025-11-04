@@ -117,7 +117,7 @@ app.post('/api/generate', async (request, response) => {
             { role: "system", content: system_prompt },
             { role: "user", content: user_prompt }
           ],
-          model: "llama2-70b-4096", // Diganti ke model Llama 2 yang stabil dan teruji di Groq
+          model: "gemma-7b-it", // Menggunakan model Gemma yang stabil dan didukung Groq
           temperature: 0.6, // Suhu seimbang untuk akurasi dan variasi
           max_tokens: 3000,
           response_format: { type: "json_object" },
