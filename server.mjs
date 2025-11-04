@@ -21,7 +21,7 @@ app.options('/api/generate', cors());
 
 
 app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend Server is running!', version: '20.0-gemini-migration' });
+  res.json({ status: 'ok', message: 'Backend Server is running!', version: '20.0-gemini-migration-prompt-update' });
 });
 
 // Fungsi pembersih JSON yang sudah ada
@@ -50,30 +50,48 @@ app.post('/api/generate', async (request, response) => {
     return response.status(400).json({ error: { message: 'Prompt tidak boleh kosong.' } });
   }
 
-  // MENGGANTI: Cari GEMINI_API_KEY, bukan GROQ_API_KEY
+  // Cari GEMINI_API_KEY
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
 
   if (!GEMINI_API_KEY) {
     return response.status(500).json({ error: { message: 'Konfigurasi Gemini API di server belum diatur. Mohon atur GEMINI_API_KEY.' } });
   }
 
-  // --- PROMPT FINAL UNTUK GEMINI ---
+  // --- PROMPT FINAL DENGAN LOGIKA BERLAPIS DAN VERIFIKASI DIRI ---
+  // Menggunakan prompt yang diminta pengguna dengan penyesuaian untuk Gemini
   const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia yang sangat teliti, presisi, dan anti-salah. Misi utama Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat untuk semua mata pelajaran (Matematika, Bahasa Indonesia, IPA, IPS, Seni Budaya, PJOK).
 
+  ### PROSES BERPIKIR WAJIB (Ikuti langkah demi langkah tanpa kecuali):
+  1.  **ANALISIS PERMINTAAN:** Pahami permintaan pengguna secara mendalam: Mata Pelajaran, Topik, Kelas, Tingkat Kesulitan, Jumlah Soal, dan Jenis Soal.
+  
+  2.  **PEMBUATAN KONTEN INTERNAL:**
+      -   Buat draf pertanyaan dalam Bahasa Indonesia yang **SESUAI** dengan semua parameter dari Langkah 1.
+      -   **Jika soal MATEMATIKA, HITUNG jawabannya dengan cermat. Tuliskan perhitunganmu dalam pikiranmu.** Contoh: "Permintaan adalah akar dari 144. Aku tahu 12 * 12 = 144. Jawabannya PASTI 12."
+      -   Untuk mata pelajaran lain (IPA, IPS, dll.), pastikan faktanya akurat dan relevan dengan kurikulum SD di Indonesia.
+      -   Tentukan jawaban yang benar (\`correctAnswer\`).
+      -   Buat 3 pilihan jawaban pengecoh yang relevan, masuk akal, tetapi salah.
+  
+  3.  **VERIFIKASI DIRI & KOREKSI (Langkah Wajib Kedua):**
+      -   Periksa kembali konten yang baru saja Anda buat. Apakah jawaban matematisnya sudah 100% akurat? Apakah faktanya benar? Apakah tingkat kesulitannya sesuai? Jika ada kesalahan, **PERBAIKI SEKARANG**.
+  
+  4.  **PENYUSUNAN & VERIFIKASI JSON FINAL:**
+      -   Susun konten yang sudah terverifikasi ke dalam format JSON.
+      -   Periksa kembali JSON tersebut. Apakah sudah 100% valid? Apakah tidak ada teks tambahan di luar JSON? Apakah kunci utamanya adalah "questions"?
+      -   Kirimkan HANYA JSON yang sudah lolos semua verifikasi.
+
   ### ATURAN OUTPUT FINAL:
-  - Output HARUS HANYA berupa satu objek JSON yang valid.
-  - JANGAN PERNAH menambahkan teks pembuka, penjelasan, atau penutup.
-  - Kunci utamanya HARUS "questions".
-  - **JENIS SOAL (WAJIB):**
-      - **Pilihan Ganda**: Array string \`options\` harus berisi 4 pilihan, \`correctAnswer\` adalah indeks (angka 0-3).
-      - **Isian**: Array \`options\` harus kosong \`[]\`, \`correctAnswer\` adalah jawaban singkat (string).
-  - Pastikan tingkat kesulitan dan topik sesuai dengan kurikulum SD di Indonesia.`;
+  -   Output HARUS HANYA berupa satu objek JSON yang valid.
+  -   **JANGAN PERNAH** menambahkan teks pembuka, penjelasan, atau penutup.
+  -   **VARIASI:** Setiap permintaan adalah permintaan baru. Buat soal yang berbeda setiap saat.
+  -   **JENIS SOAL:**
+      -   **Pilihan Ganda**: \`options\` harus array 4 string, \`correctAnswer\` adalah indeks (angka 0-3).
+      -   **Isian**: \`options\` harus array kosong \`[]\`, \`correctAnswer\` adalah jawaban singkat (string).`;
+  // --- AKHIR DARI PROMPT BARU ---
 
   const user_query = `Buatkan soal berdasarkan permintaan pengguna ini: "${prompt}"`;
-  // --- AKHIR DARI PROMPT ---
 
   try {
-    // MENGGANTI: Endpoint ke Gemini API
+    // Endpoint ke Gemini API
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
 
     const geminiResponse = await fetch(
@@ -85,8 +103,10 @@ app.post('/api/generate', async (request, response) => {
         },
         body: JSON.stringify({
           contents: [{ parts: [{ text: user_query }] }],
-          // PINDAH: systemInstruction dipindahkan ke level root di sini
-          systemInstruction: system_prompt, 
+          // systemInstruction diletakkan di level root (sudah benar)
+          systemInstruction: {
+            parts: [{ text: system_prompt }] 
+          }, 
           generationConfig: {
             // responseMimeType tetap di sini untuk forcing JSON
             responseMimeType: "application/json",
