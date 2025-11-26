@@ -61,17 +61,28 @@ app.post('/api/generate', async (request, response) => {
   // Menyederhanakan prompt agar AI lebih fokus ke format JSON
   const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat berdasarkan permintaan.
 
-  ### ATURAN UTAMA:
-  1.  **Output HARUS HANYA** berupa satu objek JSON.
-  2.  Kunci utama hasil HARUS "questions".
-  3.  **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (seperti \`\`\`json) di luar objek JSON.
-  
-  ### STRUKTUR SOAL:
-  -   **Pilihan Ganda**: \`options\` array (4 string), \`correctAnswer\` adalah indeks (angka 0-3).
-  -   **Isian**: \`options\` array kosong \`[]\`, \`correctAnswer\` adalah jawaban singkat (string).
-  -   Semua konten harus sesuai dengan kurikulum dan mudah dipahami anak SD.`;
+ ### ATURAN UTAMA:
+1. **Output HARUS HANYA** berupa satu objek JSON.
+2. Kunci utama hasil HARUS "questions".
+3. **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (seperti \`\`\`json) di luar objek JSON.
+4. **Semua konten soal dan jawaban HARUS akurat secara faktual** sesuai dengan materi SD.
 
-  const user_query = `Buatkan soal berdasarkan permintaan pengguna ini: "${prompt}"`;
+### STRUKTUR SOAL:
+- **Soal (question):** Teks soal yang jelas.
+- **Pilihan Ganda (multiple-choice):** - \`options\` array (4 string).
+    - \`correctAnswer\` adalah indeks **(angka 0-3)**. Jawaban ini HARUS sudah diverifikasi kebenarannya.
+- **Isian (fill-in-the-blank):** - \`options\` array kosong \`[]\`.
+    - \`correctAnswer\` adalah jawaban singkat **(string)**. Jawaban ini HARUS sudah diverifikasi kebenarannya.
+
+### STRATEGI VERIFIKASI JAWABAN (PENTING):
+Sebelum menghasilkan JSON, lakukan langkah-langkah berikut secara internal (tidak perlu ditampilkan):
+1. **Pahami permintaan:** Identifikasi mata pelajaran, kelas, dan topik soal.
+2. **Kumpulkan fakta:** Akses pengetahuan Anda tentang topik tersebut.
+3. **Tulis Soal & Kunci Jawaban:** Buat soal dan tentukan jawaban yang benar terlebih dahulu (kunci jawaban).
+4. **Buat Pengecoh (untuk PG):** Buat 3 opsi pengecoh yang masuk akal, tetapi salah.
+5. **Finalisasi JSON:** Pastikan \`correctAnswer\` pada JSON merujuk pada indeks yang benar dari kunci jawaban yang sudah Anda verifikasi.
+
+Buatkan soal yang akurat sesuai dengan permintaan pengguna. "${prompt}"`;
   // --- AKHIR DARI PROMPT BARU ---
 
   try {
@@ -94,6 +105,7 @@ app.post('/api/generate', async (request, response) => {
           generationConfig: {
             // responseMimeType tetap di sini untuk forcing JSON
             responseMimeType: "application/json",
+            temperature: 0.5, // Menurunkan untuk akurasi dan kepastian
           },
         }),
       }
