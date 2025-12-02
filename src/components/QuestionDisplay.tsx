@@ -90,11 +90,21 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
 
       doc.save(`Soal - ${questions[0]?.subject || 'umum'}.pdf`);
 
-    } catch (error) {
+} catch (error) {
       console.error("Gagal membuat PDF:", error);
-      alert(`Terjadi kesalahan saat membuat PDF: ${error.message}`);
+      
+      let errorMessage = "Terjadi kesalahan saat membuat PDF yang tidak diketahui.";
+
+      // Pengecekan tipe untuk mengakses properti 'message' dengan aman
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
+      alert(`Terjadi kesalahan saat membuat PDF: ${errorMessage}`);
     }
-  };
+  }
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty.toLowerCase()) {

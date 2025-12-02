@@ -18,7 +18,6 @@ interface PromptBuilderProps {
 }
 
 const PromptBuilder: React.FC<PromptBuilderProps> = ({ 
-  customPrompt, 
   onPromptChange, 
   onDifficultyChange, 
   subject, 

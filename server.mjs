@@ -17,7 +17,6 @@ app.use(
     optionsSuccessStatus: 204,
   })
 );
-// PERUBAHAN 1: Tingkatkan limit JSON untuk menerima teks materi yang panjang
 app.use(express.json({ limit: "5mb" }));
 app.options("/api/generate", cors());
 // --- Akhir Perbaikan CORS ---
@@ -52,8 +51,7 @@ function parseDirtyJson(dirtyJson) {
 }
 
 app.post("/api/generate", async (request, response) => {
-  // Menerima prompt dan materialContent dari body request
-  const { prompt, materialContent } = request.body; // <-- Variabel 'prompt' didefinisikan di sini
+  const { prompt, materialContent } = request.body;
 
   if (!prompt) {
     return response
@@ -62,7 +60,7 @@ app.post("/api/generate", async (request, response) => {
   }
 
   // Cari GEMINI_API_KEY
-  dotenv.config(); // Pastikan dotenv dipanggil
+  dotenv.config();
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
@@ -77,8 +75,7 @@ app.post("/api/generate", async (request, response) => {
   }
 
   // --- PROMPT FINAL DENGAN LOGIKA BERLAPIS DAN VERIFIKASI DIRI ---
-
-  // Siapkan konteks dan instruksi material
+  // Menyederhanakan prompt agar AI lebih fokus ke format JSON
   const material_context = materialContent
     ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
     : "";
@@ -123,8 +120,7 @@ Sebelum menghasilkan JSON, lakukan langkah-langkah berikut secara internal (tida
 
 ${material_context}
 
-Buatkan soal yang akurat sesuai dengan permintaan pengguna.
-`;
+Buatkan soal yang akurat sesuai dengan permintaan pengguna.`;
   // --- AKHIR DARI PROMPT BARU ---
 
   try {
@@ -136,10 +132,8 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
       headers: {
         "Content-Type": "application/json",
       },
-      // PERBAIKAN KRITIS: Menggunakan variabel 'prompt' yang sudah didefinisikan.
-      // Ini adalah baris di sekitar line 100 yang menyebabkan error jika salah.
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: user_query }] }],
         // systemInstruction diletakkan di level root
         systemInstruction: {
           parts: [{ text: system_prompt }],
@@ -147,7 +141,11 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
         generationConfig: {
           // responseMimeType tetap di sini untuk forcing JSON
           responseMimeType: "application/json",
-          temperature: 0.5, // Menurunkan untuk akurasi dan kepastian
+          maxOutputTokens: 2048, // Batasi panjang respons
+          temperature: 0.5, // Kontrol kreativitas
+          topP: 0.95, // Nucleus sampling
+          topK: 40, // Batasi pilihan token
+          repetitionPenalty: 1.15, // Hindari pengulangan
         },
       }),
     });
