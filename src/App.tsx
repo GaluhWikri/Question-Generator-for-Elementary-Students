@@ -16,16 +16,16 @@ function App() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [requestedDifficulty, setRequestedDifficulty] = useState('');
-  // BARU: State untuk konten materi dan nama file
-  const [materialContent, setMaterialContent] = useState('');
-  const [fileName, setFileName] = useState('');
+  const [requestedDifficulty, setRequestedDifficulty] = useState(''); 
+  
+  // BARU: State untuk menyimpan Base64 content dan tipe file
+  const [materialData, setMaterialData] = useState<{content: string, type: string} | null>(null); 
+  const [fileName, setFileName] = useState(''); 
 
-  // PERUBAHAN 1: Menerima konten materi
-  const handleGenerateQuestions = async (prompt: string, content: string) => {
+  const handleGenerateQuestions = async (prompt: string, material: {content: string, type: string} | null) => {
     setIsGenerating(true);
     setQuestions([]);
-
+    
     try {
       const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
       const apiEndpoint = `${backendUrl}/api/generate`;
@@ -33,8 +33,11 @@ function App() {
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Mengirim materialContent ke backend
-        body: JSON.stringify({ prompt, materialContent: content }),
+        // Mengirim materialData ke backend (Base64 + type)
+        body: JSON.stringify({ 
+            prompt, 
+            materialData: material 
+        }),
       });
 
       const data = await response.json();
@@ -44,27 +47,30 @@ function App() {
         if (String(friendlyErrorMessage).toLowerCase().includes('service unavailable')) {
           friendlyErrorMessage = "Layanan AI sedang sibuk atau tidak tersedia. Silakan coba lagi dalam beberapa saat.";
         }
+        // Tambahkan penanganan error khusus dari backend saat parsing file
+        if (friendlyErrorMessage.includes('Gagal memproses file')) {
+             throw new Error(friendlyErrorMessage);
+        }
         throw new Error(friendlyErrorMessage);
       }
 
       if (data.questions && Array.isArray(data.questions)) {
-        // Asumsi data.questions sudah mengikuti interface Question terbaru
         setQuestions(data.questions);
         setCurrentStep(4);
       } else {
         throw new Error("Format respons dari server tidak valid.");
       }
-
+      
     } catch (error) {
       console.error('Error generating questions:', error);
       if (error instanceof Error) {
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-          alert("Gagal terhubung ke server backend. Pastikan server backend Anda berjalan dan variabel VITE_API_BASE_URL sudah benar.");
+            alert("Gagal terhubung ke server backend. Pastikan server backend Anda berjalan dan variabel VITE_API_BASE_URL sudah benar.");
         } else {
-          alert(`Gagal membuat soal: ${error.message}`);
+            alert(`Gagal membuat soal: ${error.message}`);
         }
       } else {
-        alert("Gagal membuat soal karena error tak terduga.");
+          alert("Gagal membuat soal karena error tak terduga.");
       }
     } finally {
       setIsGenerating(false);
@@ -84,10 +90,10 @@ function App() {
     setCustomPrompt('');
     setQuestions([]);
     setCurrentStep(1);
-    setRequestedDifficulty('');
+    setRequestedDifficulty(''); 
     // BARU: Reset state materi
-    setMaterialContent('');
-    setFileName('');
+    setMaterialData(null); 
+    setFileName(''); 
   };
 
   return (
@@ -117,58 +123,56 @@ function App() {
             ))}
           </div>
         </div>
-      </div>
 
+        <div className="max-w-4xl mx-auto">
+          {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
+          {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
+          {currentStep === 3 && <PromptBuilder 
+            customPrompt={customPrompt} 
+            onPromptChange={setCustomPrompt} 
+            onDifficultyChange={setRequestedDifficulty} 
+            subject={selectedSubject} 
+            grade={selectedGrade}
+            // BARU: Meneruskan materialData dan fungsi update
+            materialData={materialData}
+            onMaterialDataChange={setMaterialData}
+            fileName={fileName}
+            onFileNameChange={setFileName}
+            />}
+          
+          {currentStep === 4 && <QuestionDisplay 
+            questions={questions} 
+            isGenerating={isGenerating} 
+            // Mengirim prompt dan materialData saat regenerate
+            onRegenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)} 
+            prompt={customPrompt}
+            requestedDifficulty={requestedDifficulty} 
+          />}
+        </div>
 
-      <div className="max-w-4xl mx-auto">
-        {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
-        {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
-        {currentStep === 3 && <PromptBuilder
-          customPrompt={customPrompt}
-          onPromptChange={setCustomPrompt}
-          onDifficultyChange={setRequestedDifficulty}
-          subject={selectedSubject}
-          grade={selectedGrade}
-          // BARU: Meneruskan state material ke PromptBuilder
-          materialContent={materialContent}
-          onMaterialContentChange={setMaterialContent}
-          fileName={fileName}
-          onFileNameChange={setFileName}
-        />}
-
-        {currentStep === 4 && <QuestionDisplay
-          questions={questions}
-          isGenerating={isGenerating}
-          // BARU: Mengirim customPrompt dan materialContent saat regenerate
-          onRegenerateQuestions={() => handleGenerateQuestions(customPrompt, materialContent)}
-          prompt={customPrompt}
-          requestedDifficulty={requestedDifficulty}
-        />}
-      </div>
-
-      <div className="flex flex-col sm:flex-row items-center justify-center mt-12 gap-4">
-        {currentStep > 1 && currentStep < 4 && (
-          <button onClick={() => setCurrentStep(currentStep - 1)} className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
-            Kembali
-          </button>
-        )}
-        {currentStep < 3 && (
-          <button onClick={() => setCurrentStep(currentStep + 1)} disabled={!canProceedToNext()} className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-colors ${canProceedToNext() ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}>
-            Lanjutkan
-          </button>
-        )}
-        {/* PERUBAHAN 2: Menggunakan fungsi generator dengan prompt dan content dari App state */}
-        {currentStep === 3 && <QuestionGenerator
-          onGenerateQuestions={() => handleGenerateQuestions(customPrompt, materialContent)}
-          isGenerating={isGenerating}
-          disabled={!canProceedToNext()}
-          prompt={customPrompt}
-        />}
-        {currentStep === 4 && (
-          <button onClick={resetForm} className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors">
-            Buat Soal Baru
-          </button>
-        )}
+        <div className="flex flex-col sm:flex-row items-center justify-center mt-12 gap-4">
+          {currentStep > 1 && currentStep < 4 && (
+            <button onClick={() => setCurrentStep(currentStep - 1)} className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
+              Kembali
+            </button>
+          )}
+          {currentStep < 3 && (
+            <button onClick={() => setCurrentStep(currentStep + 1)} disabled={!canProceedToNext()} className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-colors ${canProceedToNext() ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}>
+              Lanjutkan
+            </button>
+          )}
+          {currentStep === 3 && <QuestionGenerator 
+            onGenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)} 
+            isGenerating={isGenerating} 
+            disabled={!canProceedToNext()} 
+            prompt={customPrompt} 
+            />}
+          {currentStep === 4 && (
+            <button onClick={resetForm} className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors">
+              Buat Soal Baru
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

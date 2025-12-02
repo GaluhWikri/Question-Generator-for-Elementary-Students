@@ -4,6 +4,10 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
+// BARU: Impor library parsing
+import pdf from "pdf-parse";
+import mammoth from "mammoth";
+import { Buffer } from "buffer"; // Node.js Buffer
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -17,6 +21,7 @@ app.use(
     optionsSuccessStatus: 204,
   })
 );
+// Tingkatkan limit JSON untuk menerima teks/Base64 materi yang panjang
 app.use(express.json({ limit: "5mb" }));
 app.options("/api/generate", cors());
 // --- Akhir Perbaikan CORS ---
@@ -28,6 +33,41 @@ app.get("/", (req, res) => {
     version: "20.0-gemini-migration-prompt-update",
   });
 });
+
+// Fungsi untuk mengekstrak teks dari Base64 content (Mendukung PDF, DOCX, TXT)
+async function extractTextFromMaterial(materialData) {
+  if (!materialData || !materialData.content) return "";
+
+  const { content, type } = materialData;
+  // Decode Base64 string menjadi Buffer
+  const buffer = Buffer.from(content, "base64");
+
+  try {
+    if (type === "text/plain") {
+      return buffer.toString("utf8");
+    } else if (type === "application/pdf") {
+      // Parsing PDF
+      let data = await pdf(buffer);
+      return data.text;
+    } else if (
+      type.includes("word") ||
+      type.includes("officedocument.wordprocessingml.document")
+    ) {
+      // Parsing DOCX
+      let result = await mammoth.extractRawText({ buffer: buffer });
+      return result.value;
+    }
+  } catch (error) {
+    console.error("Gagal mengekstrak teks dari file:", error);
+    throw new Error(
+      `Gagal memproses file ${
+        type.split("/")[1] || "non-text file"
+      }. Pastikan file tidak terenkripsi atau terlalu kompleks.`
+    );
+  }
+
+  return "";
+}
 
 // Fungsi pembersih JSON yang sudah ada
 function parseDirtyJson(dirtyJson) {
@@ -51,12 +91,24 @@ function parseDirtyJson(dirtyJson) {
 }
 
 app.post("/api/generate", async (request, response) => {
-  const { prompt, materialContent } = request.body;
+  // Menerima prompt dan materialData
+  const { prompt, materialData } = request.body; // <-- Variabel 'prompt' didefinisikan di sini
 
   if (!prompt) {
     return response
       .status(400)
       .json({ error: { message: "Prompt tidak boleh kosong." } });
+  }
+
+  // BARU: Ekstraksi teks material
+  let materialContent = "";
+  if (materialData) {
+    try {
+      materialContent = await extractTextFromMaterial(materialData);
+    } catch (error) {
+      // Kirim error spesifik jika gagal memproses file
+      return response.status(400).json({ error: { message: error.message } });
+    }
   }
 
   // Cari GEMINI_API_KEY
@@ -75,7 +127,7 @@ app.post("/api/generate", async (request, response) => {
   }
 
   // --- PROMPT FINAL DENGAN LOGIKA BERLAPIS DAN VERIFIKASI DIRI ---
-  // Menyederhanakan prompt agar AI lebih fokus ke format JSON
+
   const material_context = materialContent
     ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
     : "";
@@ -120,7 +172,8 @@ Sebelum menghasilkan JSON, lakukan langkah-langkah berikut secara internal (tida
 
 ${material_context}
 
-Buatkan soal yang akurat sesuai dengan permintaan pengguna.`;
+Buatkan soal yang akurat sesuai dengan permintaan pengguna.
+`;
   // --- AKHIR DARI PROMPT BARU ---
 
   try {
@@ -132,20 +185,15 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.`;
       headers: {
         "Content-Type": "application/json",
       },
+      // INI ADALAH BARIS KRITIS YANG DIPERBAIKI: menggunakan 'prompt'
       body: JSON.stringify({
-        contents: [{ parts: [{ text: user_query }] }],
-        // systemInstruction diletakkan di level root
+        contents: [{ parts: [{ text: prompt }] }],
         systemInstruction: {
           parts: [{ text: system_prompt }],
         },
         generationConfig: {
-          // responseMimeType tetap di sini untuk forcing JSON
           responseMimeType: "application/json",
-          maxOutputTokens: 2048, // Batasi panjang respons
-          temperature: 0.5, // Kontrol kreativitas
-          topP: 0.95, // Nucleus sampling
-          topK: 40, // Batasi pilihan token
-          repetitionPenalty: 1.15, // Hindari pengulangan
+          temperature: 0.5,
         },
       }),
     });
@@ -164,27 +212,22 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.`;
       });
     }
 
-    // Hasil dari Gemini API sedikit berbeda
     const generatedText = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
     const finishReason = aiResponse.candidates?.[0]?.finishReason;
 
     if (!generatedText) {
-      // Cek jika diblokir karena alasan keamanan (SAFETY)
       if (finishReason === "SAFETY") {
         throw new Error(
           `Permintaan diblokir oleh filter keamanan AI. Coba ubah topik soal Anda.`
         );
       }
 
-      // Jika alasannya STOP (model berhenti normal) dan tidak ada teks,
-      // berarti model gagal menghasilkan JSON yang valid atau lengkap sesuai instruksi.
       if (finishReason === "STOP") {
         throw new Error(
           `AI gagal menghasilkan output JSON yang valid atau lengkap. Coba ulangi atau sederhanakan permintaan.`
         );
       }
 
-      // Kasus lainnya (MAX_TOKENS, dll.)
       throw new Error(
         `AI tidak memberikan konten jawaban. Alasan henti: ${
           finishReason || "UNKNOWN"
