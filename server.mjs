@@ -137,52 +137,56 @@ app.post("/api/generate", async (request, response) => {
 
   // --- PROMPT GENERASI SOAL ---
 
-  const material_context = materialContent
-    ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
-    : "";
-  const material_instruction = materialContent
-    ? "5. **WAJIB** gunakan informasi dari MATERI SUMBER SOAL yang diberikan untuk membuat semua pertanyaan."
-    : "";
-  const knowledge_source = materialContent
-    ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan."
-    : "Akses pengetahuan Anda tentang topik tersebut.";
+const material_context = materialContent
+  ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
+  : "";
 
-  const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat berdasarkan permintaan.
+const material_instruction = materialContent
+  ? "5. **WAJIB** mengambil seluruh fakta, konsep, dan informasi yang diperlukan dari MATERI SUMBER SOAL tanpa menyebutkan keberadaan materi tersebut di dalam soal."
+  : "";
+
+const knowledge_source = materialContent
+  ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan sebagai sumber pengetahuan, tetapi JANGAN pernah menyatakan bahwa informasi tersebut berasal dari materi."
+  : "Akses pengetahuan Anda tentang topik tersebut.";
+
+const system_prompt = `
+Anda adalah seorang GURU SD AHLI dari Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat.
 
 ### ATURAN UTAMA:
 1. **Output HARUS HANYA** berupa satu objek JSON.
 2. Kunci utama hasil HARUS "questions".
-3. **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (seperti \`\`\`json) di luar objek JSON.
-4. **Semua konten soal dan jawaban HARUS akurat secara faktual** sesuai dengan materi SD.
+3. **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (\`\`\`json) di luar objek JSON.
+4. **Semua konten soal dan jawaban HARUS akurat secara faktual** sesuai standar Kompentesi SD.
 ${material_instruction}
 
 ### STRUKTUR SOAL:
-Semua objek soal dalam array "questions" HARUS memiliki kunci "type" yang valid.
-- **Soal Pilihan Ganda:**
-    - \`type\`: "multiple-choice"
-    - \`options\` array (4 string).
-    - \`correctAnswer\` adalah indeks **(angka 0-3)**.
-- **Soal Isian Singkat:**
-    - \`type\`: "fill-in-the-blank"
-    - \`options\` array kosong \`[]\`.
-    - \`correctAnswer\` adalah jawaban singkat **(string)**.
-- **Soal Uraian/Essay:**
-    - \`type\`: "essay" // Jenis soal baru
-    - \`options\` array kosong \`[]\`.
-    - \`correctAnswer\` adalah kunci jawaban/panduan penilaian **(string, bisa panjang/deskriptif)**.
+- **Pilihan Ganda**
+  - \`type\`: "multiple-choice"
+  - \`options\`: array berisi 4 opsi (string)
+  - \`correctAnswer\`: indeks opsi yang benar (0–3)
 
-### STRATEGI VERIFIKASI JAWABAN (PENTING):
-Sebelum menghasilkan JSON, lakukan langkah-langkah berikut secara internal (tidak perlu ditampilkan):
-1. **Pahami permintaan:** Identifikasi mata pelajaran, kelas, dan topik soal.
-2. **Kumpulkan fakta:** ${knowledge_source}
-3. **Tulis Soal & Kunci Jawaban:** Buat soal dan tentukan jawaban yang benar terlebih dahulu (kunci jawaban).
-4. **Buat Pengecoh (untuk PG):** Buat 3 opsi pengecoh yang masuk akal, tetapi salah.
-5. **Finalisasi JSON:** Pastikan \`correctAnswer\` dan \`type\` sudah benar.
+- **Isian Singkat**
+  - \`type\`: "fill-in-the-blank"
+  - \`options\`: []
+  - \`correctAnswer\`: string jawaban singkat
+
+- **Essay**
+  - \`type\`: "essay"
+  - \`options\`: []
+  - \`correctAnswer\`: deskripsi kunci jawaban
+
+### STRATEGI VERIFIKASI INTERNAL (tidak ditampilkan):
+1. Identifikasi mata pelajaran, kelas, dan topik.
+2. ${knowledge_source}
+3. Tentukan jawaban yang benar terlebih dahulu.
+4. Buat 3 pengecoh masuk akal (untuk PG).
+5. Pastikan struktur JSON valid dan lengkap.
 
 ${material_context}
 
-Buatkan soal yang akurat sesuai dengan permintaan pengguna.
+Buatkan soal yang akurat sesuai permintaan pengguna.
 `;
+
   // --- AKHIR DARI PROMPT BARU ---
 
   try {

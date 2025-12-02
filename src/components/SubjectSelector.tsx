@@ -7,12 +7,12 @@ interface SubjectSelectorProps {
 }
 
 const subjects = [
-  { id: 'matematika', name: 'Matematika', icon: Calculator, color: 'from-blue-500 to-cyan-500' },
-  { id: 'bahasa-indonesia', name: 'Bahasa Indonesia', icon: BookOpen, color: 'from-green-500 to-emerald-500' },
-  { id: 'ipa', name: 'IPA', icon: Flask, color: 'from-purple-500 to-pink-500' },
-  { id: 'ips', name: 'IPS', icon: Globe, color: 'from-orange-500 to-red-500' },
+  { id: 'Matematika', name: 'Matematika', icon: Calculator, color: 'from-blue-500 to-cyan-500' },
+  { id: 'Bahasa-indonesia', name: 'Bahasa Indonesia', icon: BookOpen, color: 'from-green-500 to-emerald-500' },
+  { id: 'IPA', name: 'IPA', icon: Flask, color: 'from-purple-500 to-pink-500' },
+  { id: 'IPS', name: 'IPS', icon: Globe, color: 'from-orange-500 to-red-500' },
   { id: 'seni-budaya', name: 'Seni Budaya', icon: Palette, color: 'from-yellow-500 to-orange-500' },
-  { id: 'pjok', name: 'PJOK', icon: Music, color: 'from-indigo-500 to-purple-500' },
+  { id: 'PJOK', name: 'PJOK', icon: Music, color: 'from-indigo-500 to-purple-500' },
 ];
 
 const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSubjectChange }) => {

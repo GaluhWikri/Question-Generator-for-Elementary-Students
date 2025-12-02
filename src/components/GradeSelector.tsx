@@ -7,12 +7,12 @@ interface GradeSelectorProps {
 }
 
 const grades = [
-  { id: 'kelas-1', name: 'Kelas 1', level: 'Pemula', icon: Star, color: 'from-green-500 to-teal-500' },
-  { id: 'kelas-2', name: 'Kelas 2', level: 'Dasar', icon: Star, color: 'from-blue-500 to-cyan-500' },
-  { id: 'kelas-3', name: 'Kelas 3', level: 'Dasar', icon: Users, color: 'from-purple-500 to-pink-500' },
-  { id: 'kelas-4', name: 'Kelas 4', level: 'Menengah', icon: Users, color: 'from-orange-500 to-red-500' },
-  { id: 'kelas-5', name: 'Kelas 5', level: 'Menengah', icon: GraduationCap, color: 'from-yellow-500 to-orange-500' },
-  { id: 'kelas-6', name: 'Kelas 6', level: 'Lanjutan', icon: GraduationCap, color: 'from-indigo-500 to-purple-500' },
+  { id: 'Kelas-1', name: 'Kelas 1', level: 'Pemula', icon: Star, color: 'from-green-500 to-teal-500' },
+  { id: 'Kelas-2', name: 'Kelas 2', level: 'Dasar', icon: Star, color: 'from-blue-500 to-cyan-500' },
+  { id: 'Kelas-3', name: 'Kelas 3', level: 'Dasar', icon: Users, color: 'from-purple-500 to-pink-500' },
+  { id: 'Kelas-4', name: 'Kelas 4', level: 'Menengah', icon: Users, color: 'from-orange-500 to-red-500' },
+  { id: 'Kelas-5', name: 'Kelas 5', level: 'Menengah', icon: GraduationCap, color: 'from-yellow-500 to-orange-500' },
+  { id: 'Kelas-6', name: 'Kelas 6', level: 'Lanjutan', icon: GraduationCap, color: 'from-indigo-500 to-purple-500' },
 ];
 
 const GradeSelector: React.FC<GradeSelectorProps> = ({ selectedGrade, onGradeChange }) => {

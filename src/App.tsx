@@ -141,7 +141,9 @@ function App() {
             // Mengirim prompt dan materialData saat regenerate
             onRegenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)} 
             prompt={customPrompt}
-            requestedDifficulty={requestedDifficulty} 
+            requestedDifficulty={requestedDifficulty}
+            subject={selectedSubject}
+            grade={selectedGrade}
           />}
         </div>
 

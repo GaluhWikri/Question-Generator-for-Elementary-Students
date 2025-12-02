@@ -229,13 +229,13 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         {materialData && materialData.content.length > 0 ? (
           <div className="bg-gray-600 border border-indigo-500 p-3 rounded-lg flex items-center justify-between">
             {/* Menampilkan informasi file/teks yang sudah di-load */}
-            <span className="text-white text-sm truncate">{fileName || 'Teks Tempel'} ({materialData.content.length} karakter Base64)</span>
+            <span className="text-white text-sm truncate">{fileName || ''} ({materialData.content.length} karakter)</span>
             <button onClick={clearMaterial} className="text-red-400 hover:text-red-500 flex items-center gap-1">
               <XCircle className="w-5 h-5" />
               Hapus
             </button>
           </div>
-        ) : (
+        ) : ( 
           <>
             <label htmlFor="material-upload" className="block w-full text-center p-4 border-2 border-dashed border-indigo-500 rounded-lg cursor-pointer hover:bg-gray-600/50 transition-colors">
               <p className="text-indigo-400 font-medium">Klik untuk upload file</p>
