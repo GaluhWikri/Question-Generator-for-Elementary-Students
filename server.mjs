@@ -1,27 +1,33 @@
 // server.mjs
 
-import express from 'express';
-import cors from 'cors';
-import fetch from 'node-fetch';
-import dotenv from 'dotenv';
+import express from "express";
+import cors from "cors";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
 
 const app = express();
-const port = process.env.PORT || 8080; 
+const port = process.env.PORT || 8080;
 
 // --- PERBAIKAN CORS KRITIS UNTUK PREFLIGHT OPTIONS ---
-app.use(cors({
-    origin: '*', 
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+app.use(
+  cors({
+    origin: "*",
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     preflightContinue: false,
-    optionsSuccessStatus: 204
-}));
-app.use(express.json());
-app.options('/api/generate', cors()); 
+    optionsSuccessStatus: 204,
+  })
+);
+// PERUBAHAN 1: Tingkatkan limit JSON untuk menerima teks materi yang panjang
+app.use(express.json({ limit: "5mb" }));
+app.options("/api/generate", cors());
 // --- Akhir Perbaikan CORS ---
 
-
-app.get('/', (req, res) => {
-  res.json({ status: 'ok', message: 'Backend Server is running!', version: '20.0-gemini-migration-prompt-update' });
+app.get("/", (req, res) => {
+  res.json({
+    status: "ok",
+    message: "Backend Server is running!",
+    version: "20.0-gemini-migration-prompt-update",
+  });
 });
 
 // Fungsi pembersih JSON yang sudah ada
@@ -34,113 +40,158 @@ function parseDirtyJson(dirtyJson) {
   try {
     return JSON.parse(jsonString);
   } catch (e) {
-    let cleanedString = jsonString.replace(/,\s*([\]}])/g, '$1');
+    let cleanedString = jsonString.replace(/,\s*([\]}])/g, "$1");
     try {
-        return JSON.parse(cleanedString);
+      return JSON.parse(cleanedString);
     } catch (finalError) {
-        throw new Error("AI mengembalikan format JSON yang tidak bisa diperbaiki.");
+      throw new Error(
+        "AI mengembalikan format JSON yang tidak bisa diperbaiki."
+      );
     }
   }
 }
 
+app.post("/api/generate", async (request, response) => {
+  // Menerima prompt dan materialContent dari body request
+  const { prompt, materialContent } = request.body; // <-- Variabel 'prompt' didefinisikan di sini
 
-app.post('/api/generate', async (request, response) => {
-  const { prompt } = request.body;
   if (!prompt) {
-    return response.status(400).json({ error: { message: 'Prompt tidak boleh kosong.' } });
+    return response
+      .status(400)
+      .json({ error: { message: "Prompt tidak boleh kosong." } });
   }
 
   // Cari GEMINI_API_KEY
-  const GEMINI_API_KEY = process.env.GEMINI_API_KEY; 
+  dotenv.config(); // Pastikan dotenv dipanggil
+  const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    return response.status(500).json({ error: { message: 'Konfigurasi Gemini API di server belum diatur. Mohon atur GEMINI_API_KEY.' } });
+    return response
+      .status(500)
+      .json({
+        error: {
+          message:
+            "Konfigurasi Gemini API di server belum diatur. Mohon atur GEMINI_API_KEY.",
+        },
+      });
   }
 
   // --- PROMPT FINAL DENGAN LOGIKA BERLAPIS DAN VERIFIKASI DIRI ---
-  // Menyederhanakan prompt agar AI lebih fokus ke format JSON
+
+  // Siapkan konteks dan instruksi material
+  const material_context = materialContent
+    ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
+    : "";
+  const material_instruction = materialContent
+    ? "5. **WAJIB** gunakan informasi dari MATERI SUMBER SOAL yang diberikan untuk membuat semua pertanyaan."
+    : "";
+  const knowledge_source = materialContent
+    ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan."
+    : "Akses pengetahuan Anda tentang topik tersebut.";
+
   const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat berdasarkan permintaan.
 
- ### ATURAN UTAMA:
+### ATURAN UTAMA:
 1. **Output HARUS HANYA** berupa satu objek JSON.
 2. Kunci utama hasil HARUS "questions".
 3. **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (seperti \`\`\`json) di luar objek JSON.
 4. **Semua konten soal dan jawaban HARUS akurat secara faktual** sesuai dengan materi SD.
+${material_instruction}
 
 ### STRUKTUR SOAL:
-- **Soal (question):** Teks soal yang jelas.
-- **Pilihan Ganda (multiple-choice):** - \`options\` array (4 string).
-    - \`correctAnswer\` adalah indeks **(angka 0-3)**. Jawaban ini HARUS sudah diverifikasi kebenarannya.
-- **Isian (fill-in-the-blank):** - \`options\` array kosong \`[]\`.
-    - \`correctAnswer\` adalah jawaban singkat **(string)**. Jawaban ini HARUS sudah diverifikasi kebenarannya.
+Semua objek soal dalam array "questions" HARUS memiliki kunci "type" yang valid.
+- **Soal Pilihan Ganda:**
+    - \`type\`: "multiple-choice"
+    - \`options\` array (4 string).
+    - \`correctAnswer\` adalah indeks **(angka 0-3)**.
+- **Soal Isian Singkat:**
+    - \`type\`: "fill-in-the-blank"
+    - \`options\` array kosong \`[]\`.
+    - \`correctAnswer\` adalah jawaban singkat **(string)**.
+- **Soal Uraian/Essay:**
+    - \`type\`: "essay" // Jenis soal baru
+    - \`options\` array kosong \`[]\`.
+    - \`correctAnswer\` adalah kunci jawaban/panduan penilaian **(string, bisa panjang/deskriptif)**.
 
 ### STRATEGI VERIFIKASI JAWABAN (PENTING):
 Sebelum menghasilkan JSON, lakukan langkah-langkah berikut secara internal (tidak perlu ditampilkan):
 1. **Pahami permintaan:** Identifikasi mata pelajaran, kelas, dan topik soal.
-2. **Kumpulkan fakta:** Akses pengetahuan Anda tentang topik tersebut.
+2. **Kumpulkan fakta:** ${knowledge_source}
 3. **Tulis Soal & Kunci Jawaban:** Buat soal dan tentukan jawaban yang benar terlebih dahulu (kunci jawaban).
 4. **Buat Pengecoh (untuk PG):** Buat 3 opsi pengecoh yang masuk akal, tetapi salah.
-5. **Finalisasi JSON:** Pastikan \`correctAnswer\` pada JSON merujuk pada indeks yang benar dari kunci jawaban yang sudah Anda verifikasi.
+5. **Finalisasi JSON:** Pastikan \`correctAnswer\` dan \`type\` sudah benar.
 
-Buatkan soal yang akurat sesuai dengan permintaan pengguna. "${prompt}"`;
+${material_context}
+
+Buatkan soal yang akurat sesuai dengan permintaan pengguna.
+`;
   // --- AKHIR DARI PROMPT BARU ---
 
   try {
     // Endpoint ke Gemini API
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
 
-    const geminiResponse = await fetch(
-      geminiUrl,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+    const geminiResponse = await fetch(geminiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      // PERBAIKAN KRITIS: Menggunakan variabel 'prompt' yang sudah didefinisikan.
+      // Ini adalah baris di sekitar line 100 yang menyebabkan error jika salah.
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        // systemInstruction diletakkan di level root
+        systemInstruction: {
+          parts: [{ text: system_prompt }],
         },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: user_query }] }],
-          // systemInstruction diletakkan di level root
-          systemInstruction: {
-            parts: [{ text: system_prompt }] 
-          }, 
-          generationConfig: {
-            // responseMimeType tetap di sini untuk forcing JSON
-            responseMimeType: "application/json",
-            temperature: 0.5, // Menurunkan untuk akurasi dan kepastian
-          },
-        }),
-      }
-    );
+        generationConfig: {
+          // responseMimeType tetap di sini untuk forcing JSON
+          responseMimeType: "application/json",
+          temperature: 0.5, // Menurunkan untuk akurasi dan kepastian
+        },
+      }),
+    });
 
     const aiResponse = await geminiResponse.json();
-    
+
     if (!geminiResponse.ok) {
-        const errorMessage = aiResponse.error?.message || `Gemini API request failed with status: ${geminiResponse.status}`;
-        console.error('Gemini API Error:', errorMessage);
-        return response.status(geminiResponse.status).json({ 
-            error: { 
-                message: `Gagal memanggil Gemini API. Status: ${geminiResponse.status}. Pesan: ${errorMessage}` 
-            } 
-        });
+      const errorMessage =
+        aiResponse.error?.message ||
+        `Gemini API request failed with status: ${geminiResponse.status}`;
+      console.error("Gemini API Error:", errorMessage);
+      return response.status(geminiResponse.status).json({
+        error: {
+          message: `Gagal memanggil Gemini API. Status: ${geminiResponse.status}. Pesan: ${errorMessage}`,
+        },
+      });
     }
-    
+
     // Hasil dari Gemini API sedikit berbeda
     const generatedText = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
     const finishReason = aiResponse.candidates?.[0]?.finishReason;
-    
+
     if (!generatedText) {
-         // Cek jika diblokir karena alasan keamanan (SAFETY)
-        if (finishReason === 'SAFETY') {
-            throw new Error(`Permintaan diblokir oleh filter keamanan AI. Coba ubah topik soal Anda.`);
-        }
-        
-        // Jika alasannya STOP (model berhenti normal) dan tidak ada teks, 
-        // berarti model gagal menghasilkan JSON yang valid atau lengkap sesuai instruksi.
-        if (finishReason === 'STOP') {
-            throw new Error(`AI gagal menghasilkan output JSON yang valid atau lengkap. Coba ulangi atau sederhanakan permintaan.`);
-        }
-        
-        // Kasus lainnya (MAX_TOKENS, dll.)
-        throw new Error(`AI tidak memberikan konten jawaban. Alasan henti: ${finishReason || 'UNKNOWN'}.`);
+      // Cek jika diblokir karena alasan keamanan (SAFETY)
+      if (finishReason === "SAFETY") {
+        throw new Error(
+          `Permintaan diblokir oleh filter keamanan AI. Coba ubah topik soal Anda.`
+        );
+      }
+
+      // Jika alasannya STOP (model berhenti normal) dan tidak ada teks,
+      // berarti model gagal menghasilkan JSON yang valid atau lengkap sesuai instruksi.
+      if (finishReason === "STOP") {
+        throw new Error(
+          `AI gagal menghasilkan output JSON yang valid atau lengkap. Coba ulangi atau sederhanakan permintaan.`
+        );
+      }
+
+      // Kasus lainnya (MAX_TOKENS, dll.)
+      throw new Error(
+        `AI tidak memberikan konten jawaban. Alasan henti: ${
+          finishReason || "UNKNOWN"
+        }.`
+      );
     }
 
     const parsedJson = parseDirtyJson(generatedText);
@@ -148,12 +199,13 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna. "${prompt}"`;
     if (!parsedJson.questions) {
       throw new Error('Kunci "questions" tidak ditemukan dalam respons JSON.');
     }
-    
-    return response.status(200).json(parsedJson);
 
+    return response.status(200).json(parsedJson);
   } catch (error) {
-    console.error('Internal Server Error:', error);
-    return response.status(500).json({ error: { message: `Internal Server Error: ${error.message}` } });
+    console.error("Internal Server Error:", error);
+    return response
+      .status(500)
+      .json({ error: { message: `Internal Server Error: ${error.message}` } });
   }
 });
 

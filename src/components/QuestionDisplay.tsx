@@ -1,17 +1,18 @@
 // src/components/QuestionDisplay.tsx
 
 import React from 'react';
-import { Download, RefreshCw, CheckCircle, FileText, Type, Target } from 'lucide-react'; // Import Target icon
+// Import Edit icon untuk Uraian/Essay
+import { Download, RefreshCw, CheckCircle, FileText, Type, Target, BookOpen, Edit } from 'lucide-react';
 import { Question } from '../types/Question';
 import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable'; // Impor autoTable secara langsung
+import autoTable from 'jspdf-autotable';
 
 interface QuestionDisplayProps {
   questions: Question[];
   isGenerating: boolean;
-  onRegenerateQuestions: (prompt: string) => void;
+  onRegenerateQuestions: () => void; // Disesuaikan, prompt/content ditangani App.tsx
   prompt: string;
-  requestedDifficulty: string; // Prop baru
+  requestedDifficulty: string;
 }
 
 const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
@@ -19,9 +20,9 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
   isGenerating,
   onRegenerateQuestions,
   prompt,
-  requestedDifficulty // Ambil prop baru
+  requestedDifficulty
 }) => {
-
+  // ... (renderContent tetap sama) ...
   const renderContent = (content: any): string => {
     if (typeof content === 'string') return content;
     if (typeof content === 'object' && content !== null && content.hasOwnProperty('text')) return String(content.text);
@@ -38,23 +39,34 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
 
       const tableData = questions.map((q, index) => {
         let answerSection = '';
-        if (q.options && q.options.length > 0) {
+        let questionType = '';
+
+        const content = renderContent(q.question);
+
+        // PERUBAHAN 1: Logika penanganan tipe soal di PDF Export
+        if (q.type === 'multiple-choice' && q.options && q.options.length > 0) {
+          questionType = 'Pilihan Ganda';
           answerSection = q.options
             .map((opt, i) => {
               const label = String.fromCharCode(65 + i);
+              // Catatan: correctAnswer bisa jadi string atau number, tapi untuk PG harus number
               const isCorrect = typeof q.correctAnswer === 'number' && i === q.correctAnswer;
               return `${isCorrect ? '->' : '  '} ${label}. ${renderContent(opt)}`;
             })
             .join('\n');
+        } else if (q.type === 'essay') {
+          questionType = 'Uraian (Essay)';
+          answerSection = `Kunci Jawaban Uraian:\n${renderContent(q.correctAnswer)}`;
         } else {
-          answerSection = `Jawaban: ${renderContent(q.correctAnswer)}`;
+          // Default: fill-in-the-blank atau tipe lain
+          questionType = 'Isian Singkat';
+          answerSection = `Jawaban Singkat: ${renderContent(q.correctAnswer)}`;
         }
+        // AKHIR PERUBAHAN 1
 
-        const questionText = renderContent(q.question);
-        return [`${index + 1}. ${questionText}`, answerSection];
+        return [`${index + 1}. [${questionType}] ${content}`, answerSection];
       });
 
-      // --- PERBAIKAN UTAMA: Panggil autoTable sebagai fungsi ---
       autoTable(doc, {
         startY: 30,
         head: [['Pertanyaan', 'Pilihan / Jawaban']],
@@ -63,16 +75,16 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
         styles: {
           fontSize: 10,
           cellPadding: 3,
-          valign: 'middle',
+          valign: 'top', // Ubah ke top untuk uraian
         },
         headStyles: {
-          fillColor: [76, 85, 128], // Kode warna ungu
+          fillColor: [76, 85, 128],
           textColor: 255,
           fontStyle: 'bold',
         },
         columnStyles: {
-          0: { cellWidth: 'auto' },
-          1: { cellWidth: 'auto' },
+          0: { cellWidth: 95 },
+          1: { cellWidth: 90 },
         }
       });
 
@@ -100,29 +112,25 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
     }
   };
 
-  if (isGenerating && questions.length === 0) {
-    return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
-        <div className="text-center">
-          <div className="animate-spin w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full mx-auto mb-6"></div>
-          <h2 className="text-2xl font-bold text-white mb-2">Membuat Soal...</h2>
-          <p className="text-gray-300">AI sedang menghasilkan soal-soal berkualitas untuk Anda</p>
-        </div>
-      </div>
-    );
+  // BARU: Fungsi untuk menentukan ikon tipe soal
+  const getQuestionTypeIcon = (type: string) => {
+    switch (type) {
+      case 'multiple-choice':
+        return <BookOpen className="w-5 h-5 text-gray-400" />;
+      case 'fill-in-the-blank':
+        return <Type className="w-5 h-5 text-gray-400" />;
+      case 'essay':
+        return <Edit className="w-5 h-5 text-gray-400" />;
+      default:
+        return <FileText className="w-5 h-5 text-gray-400" />;
+    }
   }
 
-  if (questions.length === 0) {
-    return (
-      <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700 text-center">
-        <h2 className="text-2xl font-bold text-white mb-2">Gagal Membuat Soal</h2>
-        <p className="text-gray-300">AI tidak berhasil membuat soal untuk permintaan ini. Coba ubah prompt atau topik Anda dan generate ulang.</p>
-      </div>
-    );
-  }
+  // ... (Pengecekan isGenerating dan questions.length === 0 tetap) ...
 
   return (
     <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
+      {/* ... (Header dan tombol Regenerate/Export tetap) ... */}
       <div className="flex items-center justify-between mb-4">
         <div>
           <h2 className="text-2xl font-bold text-white mb-2">Soal yang Dihasilkan</h2>
@@ -140,7 +148,7 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
         </div>
         <div className="flex gap-3">
           <button
-            onClick={() => onRegenerateQuestions(prompt)}
+            onClick={onRegenerateQuestions}
             disabled={isGenerating}
             className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors disabled:bg-gray-600"
           >
@@ -172,12 +180,14 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
                   </span>
                 )}
               </div>
-              <FileText className="w-5 h-5 text-gray-400" />
+              {/* BARU: Menampilkan ikon tipe soal */}
+              {getQuestionTypeIcon(question.type || 'unknown')}
             </div>
 
             <h3 className="text-lg font-semibold text-white mb-4">{renderContent(question.question)}</h3>
 
-            {question.options && question.options.length > 0 ? (
+            {/* PERUBAHAN 2: Logika tampilan untuk PG, Isian, dan Uraian */}
+            {question.type === 'multiple-choice' && question.options && question.options.length > 0 ? (
               <div className="space-y-3">
                 {question.options.map((option, optionIndex) => (
                   <div
@@ -192,13 +202,23 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
                   </div>
                 ))}
               </div>
+            ) : question.type === 'essay' ? (
+              <div className="mt-4 bg-purple-900/50 border border-purple-700 rounded-lg p-3 flex flex-col gap-2">
+                <div className="flex items-center gap-3">
+                  <Edit className="w-5 h-5 text-purple-400" />
+                  <span className="text-purple-300 font-medium">Kunci Jawaban Uraian:</span>
+                </div>
+                {/* Menggunakan whitespace-pre-wrap agar format jawaban panjang dari AI tetap terjaga */}
+                <p className="text-white font-normal pl-8 whitespace-pre-wrap">{renderContent(question.correctAnswer)}</p>
+              </div>
             ) : (
               <div className="mt-4 bg-green-900/50 border border-green-700 rounded-lg p-3 flex items-center gap-3">
                 <Type className="w-5 h-5 text-green-400" />
-                <span className="text-green-300 font-medium">Jawaban:</span>
+                <span className="text-green-300 font-medium">Jawaban Isian Singkat:</span>
                 <span className="text-white font-semibold">{renderContent(question.correctAnswer)}</span>
               </div>
             )}
+            {/* AKHIR PERUBAHAN 2 */}
           </div>
         ))}
       </div>

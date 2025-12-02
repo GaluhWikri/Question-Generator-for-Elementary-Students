@@ -16,22 +16,25 @@ function App() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  // State baru untuk menyimpan tingkat kesulitan yang diminta
-  const [requestedDifficulty, setRequestedDifficulty] = useState(''); 
+  const [requestedDifficulty, setRequestedDifficulty] = useState('');
+  // BARU: State untuk konten materi dan nama file
+  const [materialContent, setMaterialContent] = useState('');
+  const [fileName, setFileName] = useState('');
 
-  const handleGenerateQuestions = async (prompt: string) => {
+  // PERUBAHAN 1: Menerima konten materi
+  const handleGenerateQuestions = async (prompt: string, content: string) => {
     setIsGenerating(true);
     setQuestions([]);
-    
+
     try {
-      // Ganti URL ini jika Anda men-deploy ke alamat yang berbeda
       const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
       const apiEndpoint = `${backendUrl}/api/generate`;
 
       const response = await fetch(apiEndpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt }),
+        // Mengirim materialContent ke backend
+        body: JSON.stringify({ prompt, materialContent: content }),
       });
 
       const data = await response.json();
@@ -45,18 +48,23 @@ function App() {
       }
 
       if (data.questions && Array.isArray(data.questions)) {
+        // Asumsi data.questions sudah mengikuti interface Question terbaru
         setQuestions(data.questions);
         setCurrentStep(4);
       } else {
         throw new Error("Format respons dari server tidak valid.");
       }
-      
+
     } catch (error) {
       console.error('Error generating questions:', error);
-      if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
+      if (error instanceof Error) {
+        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
           alert("Gagal terhubung ke server backend. Pastikan server backend Anda berjalan dan variabel VITE_API_BASE_URL sudah benar.");
-      } else {
+        } else {
           alert(`Gagal membuat soal: ${error.message}`);
+        }
+      } else {
+        alert("Gagal membuat soal karena error tak terduga.");
       }
     } finally {
       setIsGenerating(false);
@@ -76,7 +84,10 @@ function App() {
     setCustomPrompt('');
     setQuestions([]);
     setCurrentStep(1);
-    setRequestedDifficulty(''); // Reset kesulitan juga
+    setRequestedDifficulty('');
+    // BARU: Reset state materi
+    setMaterialContent('');
+    setFileName('');
   };
 
   return (
@@ -106,44 +117,58 @@ function App() {
             ))}
           </div>
         </div>
+      </div>
 
-        <div className="max-w-4xl mx-auto">
-          {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
-          {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
-          {currentStep === 3 && <PromptBuilder 
-            customPrompt={customPrompt} 
-            onPromptChange={setCustomPrompt} 
-            onDifficultyChange={setRequestedDifficulty} // Meneruskan fungsi update kesulitan
-            subject={selectedSubject} 
-            grade={selectedGrade} />}
-          
-          {currentStep === 4 && <QuestionDisplay 
-            questions={questions} 
-            isGenerating={isGenerating} 
-            onRegenerateQuestions={() => handleGenerateQuestions(customPrompt)} 
-            prompt={customPrompt}
-            requestedDifficulty={requestedDifficulty} // Meneruskan kesulitan yang diminta
-          />}
-        </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center mt-12 gap-4">
-          {currentStep > 1 && currentStep < 4 && (
-            <button onClick={() => setCurrentStep(currentStep - 1)} className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
-              Kembali
-            </button>
-          )}
-          {currentStep < 3 && (
-            <button onClick={() => setCurrentStep(currentStep + 1)} disabled={!canProceedToNext()} className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-colors ${canProceedToNext() ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}>
-              Lanjutkan
-            </button>
-          )}
-          {currentStep === 3 && <QuestionGenerator onGenerateQuestions={() => handleGenerateQuestions(customPrompt)} isGenerating={isGenerating} disabled={!canProceedToNext()} prompt={customPrompt} />}
-          {currentStep === 4 && (
-            <button onClick={resetForm} className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors">
-              Buat Soal Baru
-            </button>
-          )}
-        </div>
+      <div className="max-w-4xl mx-auto">
+        {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
+        {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
+        {currentStep === 3 && <PromptBuilder
+          customPrompt={customPrompt}
+          onPromptChange={setCustomPrompt}
+          onDifficultyChange={setRequestedDifficulty}
+          subject={selectedSubject}
+          grade={selectedGrade}
+          // BARU: Meneruskan state material ke PromptBuilder
+          materialContent={materialContent}
+          onMaterialContentChange={setMaterialContent}
+          fileName={fileName}
+          onFileNameChange={setFileName}
+        />}
+
+        {currentStep === 4 && <QuestionDisplay
+          questions={questions}
+          isGenerating={isGenerating}
+          // BARU: Mengirim customPrompt dan materialContent saat regenerate
+          onRegenerateQuestions={() => handleGenerateQuestions(customPrompt, materialContent)}
+          prompt={customPrompt}
+          requestedDifficulty={requestedDifficulty}
+        />}
+      </div>
+
+      <div className="flex flex-col sm:flex-row items-center justify-center mt-12 gap-4">
+        {currentStep > 1 && currentStep < 4 && (
+          <button onClick={() => setCurrentStep(currentStep - 1)} className="w-full sm:w-auto px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-lg font-medium transition-colors">
+            Kembali
+          </button>
+        )}
+        {currentStep < 3 && (
+          <button onClick={() => setCurrentStep(currentStep + 1)} disabled={!canProceedToNext()} className={`w-full sm:w-auto px-6 py-3 rounded-lg font-medium transition-colors ${canProceedToNext() ? 'bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}>
+            Lanjutkan
+          </button>
+        )}
+        {/* PERUBAHAN 2: Menggunakan fungsi generator dengan prompt dan content dari App state */}
+        {currentStep === 3 && <QuestionGenerator
+          onGenerateQuestions={() => handleGenerateQuestions(customPrompt, materialContent)}
+          isGenerating={isGenerating}
+          disabled={!canProceedToNext()}
+          prompt={customPrompt}
+        />}
+        {currentStep === 4 && (
+          <button onClick={resetForm} className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors">
+            Buat Soal Baru
+          </button>
+        )}
       </div>
     </div>
   );
