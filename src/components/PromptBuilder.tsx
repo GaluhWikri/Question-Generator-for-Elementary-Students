@@ -33,8 +33,6 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
   const [questionType, setQuestionType] = useState('multiple-choice');
   const [topic, setTopic] = useState('');
 
-  // Dapatkan konten Base64 atau teks manual (jika ada)
-  const materialContent = materialData?.content || '';
 
   const generatePrompt = React.useCallback(() => {
     const subjectMap: { [key: string]: string } = {
@@ -137,7 +135,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
     onFileNameChange('');
   }
 
-  const MAX_CHAR_COUNT = 5000;
+
 
 
   return (
@@ -251,18 +249,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
               />
             </label>
             {/* Text area untuk input manual */}
-            <textarea
-              value={materialContent}
-              // Ketika user input manual, simpan sebagai text/plain
-              onChange={(e) => onMaterialDataChange({ content: e.target.value, type: 'text/plain' })}
-              placeholder="Atau, tempelkan teks materi langsung di sini. Gunakan teks yang jelas agar hasil soal maksimal."
-              maxLength={MAX_CHAR_COUNT}
-              rows={6}
-              className="w-full mt-4 p-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
-            <div className="text-right text-xs text-gray-400">
-              {materialContent.length}/{MAX_CHAR_COUNT} Karakter
-            </div>
+
           </>
         )}
 

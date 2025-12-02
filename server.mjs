@@ -85,7 +85,7 @@ async function extractTextFromMaterial(materialData) {
     console.error("Gagal mengekstrak teks dari file:", error);
     // Pesan error diubah untuk mencerminkan bahwa file mungkin masih terlalu kompleks untuk library.
     throw new Error(
-      `Gagal memproses file PDF. File mungkin rusak, terenkripsi, atau memiliki format yang kompleks.`
+      `Gagal memproses file PDF: ${error.message}. File mungkin rusak, terenkripsi, atau memiliki format yang kompleks.`
     );
   }
 

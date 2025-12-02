@@ -156,6 +156,7 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
           <p className="text-gray-300 text-sm">{questions.length} soal berhasil dibuat</p>
         </div>
         <div className="flex gap-3">
+          
           <button
             onClick={onRegenerateQuestions}
             disabled={isGenerating}

@@ -1,6 +1,4 @@
-// src/App.tsx
-
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Brain } from 'lucide-react';
 import SubjectSelector from './components/SubjectSelector';
 import GradeSelector from './components/GradeSelector';
