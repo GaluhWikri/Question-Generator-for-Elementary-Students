@@ -19,7 +19,6 @@ const QuestionDisplay: React.FC<QuestionDisplayProps> = ({
   questions,
   isGenerating,
   onRegenerateQuestions,
-  prompt,
   requestedDifficulty
 }) => {
   // ... (renderContent tetap sama) ...
