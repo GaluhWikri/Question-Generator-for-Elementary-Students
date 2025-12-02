@@ -4,14 +4,14 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
-// BARU: Impor library parsing
-import { fromBuffer } from "pdf-to-text"; // Mengganti pdf-parse dengan pdf-to-text
-import mammoth from "mammoth";
 import { Buffer } from "buffer";
-import { promisify } from "util"; // Untuk mengubah fungsi callback menjadi Promise
+// BARU: Import createRequire untuk memuat modul CommonJS
+import { createRequire } from "module";
 
-// Promisify fromBuffer dari pdf-to-text
-const pdfToText = promisify(fromBuffer);
+// FIX KRITIS: Menggunakan createRequire untuk memuat library CJS (pdf-parse) dengan benar.
+const require = createRequire(import.meta.url);
+const pdfParse = require("pdf-parse"); // pdfParse sekarang adalah fungsi parsing
+const mammoth = require("mammoth"); // DOCX parser
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -38,39 +38,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// Fungsi untuk mengekstrak teks dari Base64 content (Mendukung PDF, DOCX, TXT)
-async function extractTextFromMaterial(materialData) {
-  if (!materialData || !materialData.content) return "";
-
-  const { content, type } = materialData;
-  const buffer = Buffer.from(content, "base64");
-
-  try {
-    if (type === "text/plain") {
-      return buffer.toString("utf8");
-    } else if (type === "application/pdf") {
-      // LOGIKA BARU MENGGUNAKAN pdf-to-text
-      const text = await pdfToText(buffer, { maintainLayout: true });
-      return text;
-    } else if (
-      type.includes("word") ||
-      type.includes("officedocument.wordprocessingml.document")
-    ) {
-      // Parsing DOCX (tetap sama)
-      let result = await mammoth.extractRawText({ buffer: buffer });
-      return result.value;
-    }
-  } catch (error) {
-    console.error("Gagal mengekstrak teks dari file:", error);
-    // Pesan error diperbarui
-    throw new Error(
-      `Gagal memproses file PDF. File mungkin rusak atau memiliki format yang sangat unik.`
-    );
-  }
-
-  return "";
-}
-
 // Fungsi pembersih JSON yang sudah ada
 function parseDirtyJson(dirtyJson) {
   const match = dirtyJson.match(/```json\s*([\s\S]*?)\s*```/);
@@ -92,6 +59,39 @@ function parseDirtyJson(dirtyJson) {
   }
 }
 
+// Fungsi untuk mengekstrak teks dari Base64 content (Mendukung PDF, DOCX, TXT)
+async function extractTextFromMaterial(materialData) {
+  if (!materialData || !materialData.content) return "";
+
+  const { content, type } = materialData;
+  const buffer = Buffer.from(content, "base64");
+
+  try {
+    if (type === "text/plain") {
+      return buffer.toString("utf8");
+    } else if (type === "application/pdf") {
+      // PENGGUNAAN pdf-parse yang dimuat via require
+      let data = await pdfParse(buffer);
+      return data.text;
+    } else if (
+      type.includes("word") ||
+      type.includes("officedocument.wordprocessingml.document")
+    ) {
+      // Parsing DOCX (tetap sama)
+      let result = await mammoth.extractRawText({ buffer: buffer });
+      return result.value;
+    }
+  } catch (error) {
+    console.error("Gagal mengekstrak teks dari file:", error);
+    // Pesan error diubah untuk mencerminkan bahwa file mungkin masih terlalu kompleks untuk library.
+    throw new Error(
+      `Gagal memproses file PDF. File mungkin rusak, terenkripsi, atau memiliki format yang kompleks.`
+    );
+  }
+
+  return "";
+}
+
 app.post("/api/generate", async (request, response) => {
   const { prompt, materialData } = request.body;
 
@@ -101,7 +101,7 @@ app.post("/api/generate", async (request, response) => {
       .json({ error: { message: "Prompt tidak boleh kosong." } });
   }
 
-  // BARU: Ekstraksi teks material
+  // Ekstraksi teks material
   let materialContent = "";
   if (materialData) {
     try {
@@ -253,3 +253,4 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
 app.listen(port, () => {
   console.log(`✅ Backend server berjalan di port ${port}`);
 });
+export default app;
