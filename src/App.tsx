@@ -25,10 +25,7 @@ function App() {
     setQuestions([]);
     
     try {
-      const backendUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
-      const apiEndpoint = `${backendUrl}/api/generate`;
-
-      const response = await fetch(apiEndpoint, {
+      const response = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // Mengirim materialData ke backend (Base64 + type)

@@ -7,14 +7,15 @@ import dotenv from "dotenv";
 import { Buffer } from "buffer";
 // BARU: Import createRequire untuk memuat modul CommonJS
 import { createRequire } from "module";
+import mammoth from "mammoth"; // Ini sudah benar
 
-// FIX KRITIS: Menggunakan createRequire untuk memuat library CJS (pdf-parse) dengan benar.
+// --- Perbaikan Final untuk memuat pdfjs-dist ---
 const require = createRequire(import.meta.url);
-const pdfParse = require("pdf-parse"); // pdfParse sekarang adalah fungsi parsing
-const mammoth = require("mammoth"); // DOCX parser
+const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.js');
 
 const app = express();
-const port = process.env.PORT || 8080;
+const port = 8080; // Port untuk backend server
 
 // --- PERBAIKAN CORS KRITIS UNTUK PREFLIGHT OPTIONS ---
 app.use(
@@ -70,9 +71,18 @@ async function extractTextFromMaterial(materialData) {
     if (type === "text/plain") {
       return buffer.toString("utf8");
     } else if (type === "application/pdf") {
-      // PENGGUNAAN pdf-parse yang dimuat via require
-      let data = await pdfParse(buffer);
-      return data.text;
+      // Menggunakan pdfjs-dist untuk ekstraksi teks
+      // KONVERSI PENTING: pdfjs-dist membutuhkan Uint8Array, bukan Buffer Node.js
+      const uint8Array = new Uint8Array(buffer);
+      const doc = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+      let allText = "";
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items.map((item) => item.str).join(" ");
+        allText += pageText + "\n";
+      }
+      return allText;
     } else if (
       type.includes("word") ||
       type.includes("officedocument.wordprocessingml.document")
@@ -85,7 +95,7 @@ async function extractTextFromMaterial(materialData) {
     console.error("Gagal mengekstrak teks dari file:", error);
     // Pesan error diubah untuk mencerminkan bahwa file mungkin masih terlalu kompleks untuk library.
     throw new Error(
-      `Gagal memproses file PDF: ${error.message}. File mungkin rusak, terenkripsi, atau memiliki format yang kompleks.`
+      `Gagal memproses file PDF,doc,text: ${error.message}. File mungkin rusak, terenkripsi, atau memiliki format yang kompleks.`
     );
   }
 
@@ -117,14 +127,12 @@ app.post("/api/generate", async (request, response) => {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    return response
-      .status(500)
-      .json({
-        error: {
-          message:
-            "Konfigurasi Gemini API di server belum diatur. Mohon atur GEMINI_API_KEY.",
-        },
-      });
+    return response.status(500).json({
+      error: {
+        message:
+          "Konfigurasi Gemini API di server belum diatur. Mohon atur GEMINI_API_KEY.",
+      },
+    });
   }
 
   // --- PROMPT GENERASI SOAL ---
