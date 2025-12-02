@@ -4,10 +4,14 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
-// FIX: Menggunakan namespace import untuk mengatasi 'default export' error CJS
-import * as pdfModule from "pdf-parse";
+// BARU: Impor library parsing
+import { fromBuffer } from "pdf-to-text"; // Mengganti pdf-parse dengan pdf-to-text
 import mammoth from "mammoth";
-import { Buffer } from "buffer"; // Node.js Buffer
+import { Buffer } from "buffer";
+import { promisify } from "util"; // Untuk mengubah fungsi callback menjadi Promise
+
+// Promisify fromBuffer dari pdf-to-text
+const pdfToText = promisify(fromBuffer);
 
 const app = express();
 const port = process.env.PORT || 8080;
@@ -39,31 +43,28 @@ async function extractTextFromMaterial(materialData) {
   if (!materialData || !materialData.content) return "";
 
   const { content, type } = materialData;
-  // Decode Base64 string menjadi Buffer
   const buffer = Buffer.from(content, "base64");
 
   try {
     if (type === "text/plain") {
       return buffer.toString("utf8");
     } else if (type === "application/pdf") {
-      // FIX PANGGILAN FUNGSI: Menggunakan fallback untuk pdf-parse
-      const pdfParse = pdfModule.default || pdfModule;
-      let data = await pdfParse(buffer);
-      return data.text;
+      // LOGIKA BARU MENGGUNAKAN pdf-to-text
+      const text = await pdfToText(buffer, { maintainLayout: true });
+      return text;
     } else if (
       type.includes("word") ||
       type.includes("officedocument.wordprocessingml.document")
     ) {
-      // Parsing DOCX
+      // Parsing DOCX (tetap sama)
       let result = await mammoth.extractRawText({ buffer: buffer });
       return result.value;
     }
   } catch (error) {
     console.error("Gagal mengekstrak teks dari file:", error);
+    // Pesan error diperbarui
     throw new Error(
-      `Gagal memproses file ${
-        type.split("/")[1] || "non-text file"
-      }. Pastikan file tidak terenkripsi atau terlalu kompleks.`
+      `Gagal memproses file PDF. File mungkin rusak atau memiliki format yang sangat unik.`
     );
   }
 
@@ -92,7 +93,6 @@ function parseDirtyJson(dirtyJson) {
 }
 
 app.post("/api/generate", async (request, response) => {
-  // Menerima prompt dan materialData
   const { prompt, materialData } = request.body;
 
   if (!prompt) {
@@ -127,7 +127,7 @@ app.post("/api/generate", async (request, response) => {
       });
   }
 
-  // --- PROMPT FINAL DENGAN LOGIKA BERLAPIS DAN VERIFIKASI DIRI ---
+  // --- PROMPT GENERASI SOAL ---
 
   const material_context = materialContent
     ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
