@@ -4,8 +4,8 @@ import express from "express";
 import cors from "cors";
 import fetch from "node-fetch";
 import dotenv from "dotenv";
-// BARU: Impor library parsing
-import pdf from "pdf-parse";
+// FIX: Menggunakan namespace import untuk mengatasi 'default export' error CJS
+import * as pdfModule from "pdf-parse";
 import mammoth from "mammoth";
 import { Buffer } from "buffer"; // Node.js Buffer
 
@@ -46,8 +46,9 @@ async function extractTextFromMaterial(materialData) {
     if (type === "text/plain") {
       return buffer.toString("utf8");
     } else if (type === "application/pdf") {
-      // Parsing PDF
-      let data = await pdf(buffer);
+      // FIX PANGGILAN FUNGSI: Menggunakan fallback untuk pdf-parse
+      const pdfParse = pdfModule.default || pdfModule;
+      let data = await pdfParse(buffer);
       return data.text;
     } else if (
       type.includes("word") ||
@@ -92,7 +93,7 @@ function parseDirtyJson(dirtyJson) {
 
 app.post("/api/generate", async (request, response) => {
   // Menerima prompt dan materialData
-  const { prompt, materialData } = request.body; // <-- Variabel 'prompt' didefinisikan di sini
+  const { prompt, materialData } = request.body;
 
   if (!prompt) {
     return response
@@ -185,7 +186,6 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
       headers: {
         "Content-Type": "application/json",
       },
-      // INI ADALAH BARIS KRITIS YANG DIPERBAIKI: menggunakan 'prompt'
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         systemInstruction: {
