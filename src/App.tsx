@@ -26,8 +26,12 @@ function App() {
     setQuestions([]);
 
     try {
-      // PERBAIKAN: Menggunakan URL absolut ke backend server
-      const response = await fetch('http://localhost:8080/api/generate', {
+      // --- PERBAIKAN KRUSIAL UNTUK DEPLOYMENT ---
+      // Gunakan variabel lingkungan untuk base URL, atau gunakan path relatif untuk produksi.
+      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
+      const apiUrl = `${apiBaseUrl}/api/generate`;
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // PERBAIKAN: Mengirim data dengan format baru yang diharapkan backend
