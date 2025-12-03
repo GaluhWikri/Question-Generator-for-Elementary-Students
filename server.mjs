@@ -11,8 +11,10 @@ import mammoth from "mammoth"; // Ini sudah benar
 
 // --- Perbaikan Final untuk memuat pdfjs-dist ---
 const require = createRequire(import.meta.url);
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.js');
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve(
+  "pdfjs-dist/legacy/build/pdf.worker.js"
+);
 
 const app = express();
 const port = 8080; // Port untuk backend server
@@ -103,12 +105,19 @@ async function extractTextFromMaterial(materialData) {
 }
 
 app.post("/api/generate", async (request, response) => {
-  const { prompt, materialData } = request.body;
+  // PERBAIKAN: Menerima input secara terpisah untuk akurasi.
+  const { subject, grade, userPrompt, materialData } = request.body;
 
-  if (!prompt) {
+  if (!userPrompt) {
     return response
       .status(400)
       .json({ error: { message: "Prompt tidak boleh kosong." } });
+  }
+
+  if (!subject || !grade) {
+    return response
+      .status(400)
+      .json({ error: { message: "Mata pelajaran dan kelas harus dipilih." } });
   }
 
   // Ekstraksi teks material
@@ -137,50 +146,54 @@ app.post("/api/generate", async (request, response) => {
 
   // --- PROMPT GENERASI SOAL ---
 
-const material_context = materialContent
-  ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
-  : "";
+  const material_context = materialContent
+    ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
+    : "";
 
-const material_instruction = materialContent
-  ? "5. **WAJIB** mengambil seluruh fakta, konsep, dan informasi yang diperlukan dari MATERI SUMBER SOAL tanpa menyebutkan keberadaan materi tersebut di dalam soal."
-  : "";
+  const material_instruction = materialContent
+    ? "5. **WAJIB** mengambil seluruh fakta, konsep, dan informasi yang diperlukan dari MATERI SUMBER SOAL tanpa menyebutkan keberadaan materi tersebut di dalam soal."
+    : "";
 
-const knowledge_source = materialContent
-  ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan sebagai sumber pengetahuan, tetapi JANGAN pernah menyatakan bahwa informasi tersebut berasal dari materi."
-  : "Akses pengetahuan Anda tentang topik tersebut.";
+  const knowledge_source = materialContent
+    ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan sebagai sumber pengetahuan, tetapi JANGAN pernah menyatakan bahwa informasi tersebut berasal dari materi."
+    : "Akses pengetahuan Anda tentang topik tersebut.";
 
-const system_prompt = `
-Anda adalah seorang GURU SD AHLI dari Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat.
+  // --- PROMPT SISTEM YANG DISEMPURNAKAN ---
+  // Mengadopsi prinsip dari acuan untuk kualitas yang lebih tinggi.
+  const system_prompt = `Anda adalah seorang GURU AHLI pengembang soal untuk Sekolah Dasar (SD) di Indonesia yang berpedoman pada Kurikulum Merdeka. Tugas utama Anda adalah membuat soal-soal berkualitas tinggi yang sangat akurat, relevan dengan kurikulum, dan disajikan dalam format JSON yang sempurna.
 
 ### ATURAN UTAMA:
-1. **Output HARUS HANYA** berupa satu objek JSON.
-2. Kunci utama hasil HARUS "questions".
-3. **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (\`\`\`json) di luar objek JSON.
-4. **Semua konten soal dan jawaban HARUS akurat secara faktual** sesuai standar Kompentesi SD.
+1.  **FORMAT OUTPUT**: Output Anda HARUS dan HANYA berupa satu objek JSON yang valid. Objek ini harus memiliki satu kunci utama (root key) bernama "questions", yang berisi sebuah array dari objek-objek soal. JANGAN PERNAH menyertakan teks pembuka, penjelasan, atau markdown \`\`\`json\`\`\` di luar objek JSON tersebut.
+2.  **AKURASI & KONTEKS INDONESIA**: Semua soal dan jawaban harus 100% akurat secara faktual dan sesuai dengan kurikulum SD di Indonesia. Gunakan konteks lokal (nama orang Indonesia, kota di Indonesia, mata uang Rupiah, budaya, dll) agar soal terasa dekat dengan kehidupan siswa.
+3.  **PENANGANAN KONTEKS**: Jika permintaan pengguna menyimpang (misal: meminta soal Fisika untuk kelas 2 SD), adaptasikan permintaan tersebut menjadi soal yang relevan. Contoh: ubah permintaan "soal tentang kecepatan cahaya" menjadi soal Matematika sederhana tentang kecepatan sepeda. Selalu ubah konteks negatif menjadi positif dan edukatif.
 ${material_instruction}
+4.  **FORMAT MATEMATIKA**: Selalu gunakan teks biasa dan simbol matematika yang umum dipahami manusia. Gunakan simbol "x" untuk perkalian, ":" untuk pembagian. Untuk pangkat, gunakan superskrip (contoh: 15²). Untuk akar, gunakan simbol akar (contoh: √225). Untuk variabel, gunakan simbol miring matematika (contoh: 𝑥, 𝑦, 𝑎, 𝑏). CONTOH: tulis "Jika 𝑥 + 5 = 10, berapakah nilai 𝑥?", JANGAN tulis "Jika x + 5 = 10, berapakah nilai x?".
 
 ### STRUKTUR SOAL:
 - **Pilihan Ganda**
-  - \`type\`: "multiple-choice"
-  - \`options\`: array berisi 4 opsi (string)
-  - \`correctAnswer\`: indeks opsi yang benar (0–3)
+  - \`type\`: "multiple-choice" (Wajib)
+  - \`question\`: Teks pertanyaan (string).
+  - \`options\`: Array berisi 4 opsi jawaban (array of strings).
+  - \`correctAnswer\`: Indeks dari opsi yang benar (angka dari 0 hingga 3).
 
 - **Isian Singkat**
-  - \`type\`: "fill-in-the-blank"
-  - \`options\`: []
-  - \`correctAnswer\`: string jawaban singkat
+  - \`type\`: "fill-in-the-blank" (Wajib)
+  - \`question\`: Teks pertanyaan, biasanya dengan bagian kosong.
+  - \`options\`: [] (Array kosong).
+  - \`correctAnswer\`: Jawaban singkat yang benar (string).
 
 - **Essay**
-  - \`type\`: "essay"
-  - \`options\`: []
-  - \`correctAnswer\`: deskripsi kunci jawaban
+  - \`type\`: "essay" (Wajib)
+  - \`question\`: Teks pertanyaan terbuka.
+  - \`options\`: [] (Array kosong).
+  - \`correctAnswer\`: Deskripsi atau poin-poin kunci jawaban yang diharapkan (string).
 
-### STRATEGI VERIFIKASI INTERNAL (tidak ditampilkan):
-1. Identifikasi mata pelajaran, kelas, dan topik.
-2. ${knowledge_source}
-3. Tentukan jawaban yang benar terlebih dahulu.
-4. Buat 3 pengecoh masuk akal (untuk PG).
-5. Pastikan struktur JSON valid dan lengkap.
+### PROSES BERPIKIR INTERNAL ANDA (Lakukan ini dalam pikiran, jangan tampilkan di output):
+1.  **Analisis Permintaan**: Pahami mata pelajaran, kelas, topik, dan jenis soal yang diminta.
+2.  **Akses Pengetahuan**: ${knowledge_source}
+3.  **Tentukan Jawaban Dulu**: Sebelum menulis pertanyaan, tentukan terlebih dahulu jawaban yang paling akurat.
+4.  **Buat Soal**: Buat pertanyaan yang mengarah ke jawaban tersebut. Untuk Pilihan Ganda, buat 3 opsi pengecoh yang logis namun salah.
+5.  **Verifikasi Final**: Periksa kembali akurasi faktual, kesesuaian dengan kelas, konteks Indonesia, dan validitas format JSON sebelum menghasilkan output akhir.
 
 ${material_context}
 
@@ -188,6 +201,9 @@ Buatkan soal yang akurat sesuai permintaan pengguna.
 `;
 
   // --- AKHIR DARI PROMPT BARU ---
+
+  // PERBAIKAN: Membangun prompt final di backend untuk memastikan konteks selalu benar.
+  const finalPrompt = `Mata Pelajaran: ${subject}, Kelas: ${grade}. \n\nPermintaan Pengguna: ${userPrompt}`;
 
   try {
     // Endpoint ke Gemini API
@@ -199,7 +215,7 @@ Buatkan soal yang akurat sesuai permintaan pengguna.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: finalPrompt }] }],
         systemInstruction: {
           parts: [{ text: system_prompt }],
         },

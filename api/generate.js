@@ -5,8 +5,10 @@ import mammoth from "mammoth";
 
 // --- Perbaikan untuk memuat pdfjs-dist di lingkungan serverless ---
 const require = createRequire(import.meta.url);
-const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
-pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve('pdfjs-dist/legacy/build/pdf.worker.js');
+const pdfjsLib = require("pdfjs-dist/legacy/build/pdf.js");
+pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve(
+  "pdfjs-dist/legacy/build/pdf.worker.js"
+);
 
 // Fungsi pembersih JSON
 function parseDirtyJson(dirtyJson) {
@@ -69,21 +71,35 @@ async function extractTextFromMaterial(materialData) {
 
 export default async function handler(request, response) {
   // Pengaturan CORS
-  response.setHeader('Access-Control-Allow-Origin', '*'); // Izinkan semua origin
-  response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  response.setHeader("Access-Control-Allow-Origin", "*"); // Izinkan semua origin
+  response.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  response.setHeader(
+    "Access-Control-Allow-Headers",
+    "Content-Type, Authorization"
+  );
 
-  if (request.method === 'OPTIONS') {
+  if (request.method === "OPTIONS") {
     return response.status(200).end();
   }
 
-  if (request.method !== 'POST') {
-    return response.status(405).json({ error: { message: 'Method Not Allowed' } });
+  if (request.method !== "POST") {
+    return response
+      .status(405)
+      .json({ error: { message: "Method Not Allowed" } });
   }
 
-  const { prompt, materialData } = request.body;
-  if (!prompt) {
-    return response.status(400).json({ error: { message: 'Prompt tidak boleh kosong.' } });
+  // PERBAIKAN: Mengadopsi logika dari server.mjs
+  const { subject, grade, userPrompt, materialData } = request.body;
+  if (!userPrompt) {
+    return response
+      .status(400)
+      .json({ error: { message: "Prompt tidak boleh kosong." } });
+  }
+
+  if (!subject || !grade) {
+    return response
+      .status(400)
+      .json({ error: { message: "Mata pelajaran dan kelas harus dipilih." } });
   }
 
   // Ekstraksi teks material
@@ -99,42 +115,73 @@ export default async function handler(request, response) {
   const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
   if (!GEMINI_API_KEY) {
-    return response.status(500).json({ error: { message: 'Konfigurasi Gemini API di server belum diatur. Mohon atur GEMINI_API_KEY.' } });
+    return response
+      .status(500)
+      .json({
+        error: {
+          message:
+            "Konfigurasi Gemini API di server belum diatur. Mohon atur GEMINI_API_KEY.",
+        },
+      });
   }
 
   // --- PROMPT GENERASI SOAL (Sama seperti di server.mjs) ---
-  const material_context = materialContent ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n` : "";
-  const material_instruction = materialContent ? "5. **WAJIB** gunakan informasi dari MATERI SUMBER SOAL yang diberikan untuk membuat semua pertanyaan." : "";
-  const knowledge_source = materialContent ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan." : "Akses pengetahuan Anda tentang topik tersebut.";
-  const system_prompt = `Anda adalah seorang GURU SD AHLI dari Indonesia. Tugas Anda adalah menghasilkan soal berkualitas tinggi dalam format JSON yang 100% valid dan akurat berdasarkan permintaan.
+  const material_context = materialContent
+    ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
+    : "";
+
+  const material_instruction = materialContent
+    ? "5. **WAJIB** mengambil seluruh fakta, konsep, dan informasi yang diperlukan dari MATERI SUMBER SOAL tanpa menyebutkan keberadaan materi tersebut di dalam soal."
+    : "";
+
+  const knowledge_source = materialContent
+    ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan."
+    : "Akses pengetahuan Anda tentang topik tersebut.";
+
+  // PERBAIKAN: Menggunakan system_prompt yang sudah disempurnakan
+  const system_prompt = `Anda adalah seorang GURU AHLI pengembang soal untuk Sekolah Dasar (SD) di Indonesia yang berpedoman pada Kurikulum Merdeka. Tugas utama Anda adalah membuat soal-soal berkualitas tinggi yang sangat akurat, relevan dengan kurikulum, dan disajikan dalam format JSON yang sempurna.
 
 ### ATURAN UTAMA:
-1. **Output HARUS HANYA** berupa satu objek JSON.
-2. Kunci utama hasil HARUS "questions".
-3. **JANGAN PERNAH** menambahkan teks, penjelasan, atau kode markdown (seperti \`\`\`json) di luar objek JSON.
-4. **Semua konten soal dan jawaban HARUS akurat secara faktual** sesuai dengan materi SD.
+1.  **FORMAT OUTPUT**: Output Anda HARUS dan HANYA berupa satu objek JSON yang valid. Objek ini harus memiliki satu kunci utama (root key) bernama "questions", yang berisi sebuah array dari objek-objek soal. JANGAN PERNAH menyertakan teks pembuka, penjelasan, atau markdown \`\`\`json\`\`\` di luar objek JSON tersebut.
+2.  **AKURASI & KONTEKS INDONESIA**: Semua soal dan jawaban harus 100% akurat secara faktual dan sesuai dengan kurikulum SD di Indonesia. Gunakan konteks lokal (nama orang Indonesia, kota di Indonesia, mata uang Rupiah, budaya, dll) agar soal terasa dekat dengan kehidupan siswa.
+3.  **PENANGANAN KONTEKS**: Jika permintaan pengguna menyimpang (misal: meminta soal Fisika untuk kelas 2 SD), adaptasikan permintaan tersebut menjadi soal yang relevan. Contoh: ubah permintaan "soal tentang kecepatan cahaya" menjadi soal Matematika sederhana tentang kecepatan sepeda. Selalu ubah konteks negatif menjadi positif dan edukatif.
 ${material_instruction}
+4.  **FORMAT MATEMATIKA**: Selalu gunakan teks biasa dan simbol matematika yang umum dipahami manusia. Gunakan simbol "x" untuk perkalian, ":" untuk pembagian. Untuk pangkat, gunakan superskrip (contoh: 15²). Untuk akar, gunakan simbol akar (contoh: √225). Untuk variabel, gunakan simbol miring matematika (contoh: 𝑥, 𝑦, 𝑎, 𝑏). CONTOH: tulis "Jika 𝑥 + 5 = 10, berapakah nilai 𝑥?", JANGAN tulis "Jika x + 5 = 10, berapakah nilai x?".
 
 ### STRUKTUR SOAL:
-Semua objek soal dalam array "questions" HARUS memiliki kunci "type" yang valid.
-- **Soal Pilihan Ganda:** \`type\`: "multiple-choice", \`options\` array (4 string), \`correctAnswer\` adalah indeks **(angka 0-3)**.
-- **Soal Isian Singkat:** \`type\`: "fill-in-the-blank", \`options\` array kosong \`[]\`, \`correctAnswer\` adalah jawaban singkat **(string)**.
-- **Soal Uraian/Essay:** \`type\`: "essay", \`options\` array kosong \`[]\`, \`correctAnswer\` adalah kunci jawaban/panduan penilaian **(string, bisa panjang/deskriptif)**.
+- **Pilihan Ganda**
+  - \`type\`: "multiple-choice" (Wajib)
+  - \`question\`: Teks pertanyaan (string).
+  - \`options\`: Array berisi 4 opsi jawaban (array of strings).
+  - \`correctAnswer\`: Indeks dari opsi yang benar (angka dari 0 hingga 3).
 
-### STRATEGI VERIFIKASI JAWABAN (PENTING):
-Sebelum menghasilkan JSON, lakukan langkah-langkah berikut secara internal (tidak perlu ditampilkan):
-1. **Pahami permintaan:** Identifikasi mata pelajaran, kelas, dan topik soal.
-2. **Kumpulkan fakta:** ${knowledge_source}
-3. **Tulis Soal & Kunci Jawaban:** Buat soal dan tentukan jawaban yang benar terlebih dahulu (kunci jawaban).
-4. **Buat Pengecoh (untuk PG):** Buat 3 opsi pengecoh yang masuk akal, tetapi salah.
-5. **Finalisasi JSON:** Pastikan \`correctAnswer\` dan \`type\` sudah benar.
+- **Isian Singkat**
+  - \`type\`: "fill-in-the-blank" (Wajib)
+  - \`question\`: Teks pertanyaan, biasanya dengan bagian kosong.
+  - \`options\`: [] (Array kosong).
+  - \`correctAnswer\`: Jawaban singkat yang benar (string).
+
+- **Essay**
+  - \`type\`: "essay" (Wajib)
+  - \`question\`: Teks pertanyaan terbuka.
+  - \`options\`: [] (Array kosong).
+  - \`correctAnswer\`: Deskripsi atau poin-poin kunci jawaban yang diharapkan (string).
+
+### PROSES BERPIKIR INTERNAL ANDA (Lakukan ini dalam pikiran, jangan tampilkan di output):
+1.  **Analisis Permintaan**: Pahami mata pelajaran, kelas, topik, dan jenis soal yang diminta.
+2.  **Akses Pengetahuan**: ${knowledge_source}
+3.  **Tentukan Jawaban Dulu**: Sebelum menulis pertanyaan, tentukan terlebih dahulu jawaban yang paling akurat.
+4.  **Buat Soal**: Buat pertanyaan yang mengarah ke jawaban tersebut. Untuk Pilihan Ganda, buat 3 opsi pengecoh yang logis namun salah.
+5.  **Verifikasi Final**: Periksa kembali akurasi faktual, kesesuaian dengan kelas, konteks Indonesia, dan validitas format JSON sebelum menghasilkan output.
 
 ${material_context}
 
-Buatkan soal yang akurat sesuai dengan permintaan pengguna.
 `;
 
   try {
+    // PERBAIKAN: Membangun prompt final di backend
+    const finalPrompt = `Mata Pelajaran: ${subject}, Kelas: ${grade}. \n\nPermintaan Pengguna: ${userPrompt}`;
+
     const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`;
 
     const geminiResponse = await fetch(geminiUrl, {
@@ -143,7 +190,7 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: finalPrompt }] }],
         systemInstruction: {
           parts: [{ text: system_prompt }],
         },
@@ -157,8 +204,16 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
     const aiResponse = await geminiResponse.json();
 
     if (!geminiResponse.ok) {
-      const errorMessage = aiResponse.error?.message || `Gemini API request failed with status: ${geminiResponse.status}`;
-      return response.status(geminiResponse.status).json({ error: { message: `Gagal memanggil Gemini API. Status: ${geminiResponse.status}. Pesan: ${errorMessage}` } });
+      const errorMessage =
+        aiResponse.error?.message ||
+        `Gemini API request failed with status: ${geminiResponse.status}`;
+      return response
+        .status(geminiResponse.status)
+        .json({
+          error: {
+            message: `Gagal memanggil Gemini API. Status: ${geminiResponse.status}. Pesan: ${errorMessage}`,
+          },
+        });
     }
 
     const generatedText = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -166,12 +221,20 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
 
     if (!generatedText) {
       if (finishReason === "SAFETY") {
-        throw new Error(`Permintaan diblokir oleh filter keamanan AI. Coba ubah topik soal Anda.`);
+        throw new Error(
+          `Permintaan diblokir oleh filter keamanan AI. Coba ubah topik soal Anda.`
+        );
       }
       if (finishReason === "STOP") {
-        throw new Error(`AI gagal menghasilkan output JSON yang valid atau lengkap. Coba ulangi atau sederhanakan permintaan.`);
+        throw new Error(
+          `AI gagal menghasilkan output JSON yang valid atau lengkap. Coba ulangi atau sederhanakan permintaan.`
+        );
       }
-      throw new Error(`AI tidak memberikan konten jawaban. Alasan henti: ${finishReason || "UNKNOWN"}.`);
+      throw new Error(
+        `AI tidak memberikan konten jawaban. Alasan henti: ${
+          finishReason || "UNKNOWN"
+        }.`
+      );
     }
 
     const parsedJson = parseDirtyJson(generatedText);
@@ -181,9 +244,10 @@ Buatkan soal yang akurat sesuai dengan permintaan pengguna.
     }
 
     return response.status(200).json(parsedJson);
-
   } catch (error) {
     console.error("Internal Server Error:", error);
-    return response.status(500).json({ error: { message: `Internal Server Error: ${error.message}` } });
+    return response
+      .status(500)
+      .json({ error: { message: `Internal Server Error: ${error.message}` } });
   }
 }

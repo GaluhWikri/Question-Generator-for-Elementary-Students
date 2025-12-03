@@ -7,8 +7,6 @@ interface PromptBuilderProps {
   customPrompt: string;
   onPromptChange: (prompt: string) => void;
   onDifficultyChange: (difficulty: string) => void;
-  subject: string;
-  grade: string;
   // BARU: Prop untuk Material Content dan Nama File
   materialData: { content: string, type: string } | null;
   onMaterialDataChange: (data: { content: string, type: string } | null) => void;
@@ -20,8 +18,6 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
   // Hapus customPrompt dari destructuring
   onPromptChange,
   onDifficultyChange,
-  subject,
-  grade,
   // BARU: Destructuring prop material
   materialData,
   onMaterialDataChange,
@@ -35,40 +31,23 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
 
 
   const generatePrompt = React.useCallback(() => {
-    const subjectMap: { [key: string]: string } = {
-      'matematika': 'Matematika',
-      'bahasa-indonesia': 'Bahasa Indonesia',
-      'ipa': 'IPA',
-      'ips': 'IPS',
-      'seni-budaya': 'Seni Budaya',
-      'pjok': 'PJOK'
-    };
-
-    const gradeMap: { [key: string]: string } = {
-      'kelas-1': 'Kelas 1',
-      'kelas-2': 'Kelas 2',
-      'kelas-3': 'Kelas 3',
-      'kelas-4': 'Kelas 4',
-      'kelas-5': 'Kelas 5',
-      'kelas-6': 'Kelas 6'
-    };
-
     const difficultyMap: { [key: string]: string } = {
       'easy': 'mudah',
       'medium': 'sedang',
       'hard': 'sulit',
       'mixed': 'campur'
     };
-
+    
     const typeMap: { [key: string]: string } = {
       'multiple-choice': 'pilihan ganda',
       'fill-blank': 'isian singkat',
       'essay': 'uraian/essay'
     };
-
+    
     const displayDifficulty = difficultyMap[difficulty] || difficulty;
 
-    let prompt = `Buatkan ${questionCount} soal ${typeMap[questionType]} untuk mata pelajaran ${subjectMap[subject]} tingkat ${gradeMap[grade]} dengan tingkat kesulitan ${displayDifficulty}.`;
+    // PERBAIKAN: Prompt sekarang lebih sederhana, karena detail subjek dan kelas ditangani backend.
+    let prompt = `Buatkan ${questionCount} soal ${typeMap[questionType]} dengan tingkat kesulitan ${displayDifficulty}.`;
 
     if (topic) {
       prompt += ` Fokus pada topik: ${topic}.`;
@@ -83,7 +62,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
 
     onPromptChange(prompt);
     onDifficultyChange(displayDifficulty);
-  }, [questionCount, difficulty, questionType, topic, subject, grade, onPromptChange, onDifficultyChange, materialData]);
+  }, [questionCount, difficulty, questionType, topic, onPromptChange, onDifficultyChange, materialData]);
 
   useEffect(() => {
     generatePrompt();

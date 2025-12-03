@@ -14,24 +14,28 @@ function App() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStep, setCurrentStep] = useState(1);
-  const [requestedDifficulty, setRequestedDifficulty] = useState(''); 
-  
-  // BARU: State untuk menyimpan Base64 content dan tipe file
-  const [materialData, setMaterialData] = useState<{content: string, type: string} | null>(null); 
-  const [fileName, setFileName] = useState(''); 
+  const [requestedDifficulty, setRequestedDifficulty] = useState('');
 
-  const handleGenerateQuestions = async (prompt: string, material: {content: string, type: string} | null) => {
+  // BARU: State untuk menyimpan Base64 content dan tipe file
+  const [materialData, setMaterialData] = useState<{ content: string, type: string } | null>(null);
+  const [fileName, setFileName] = useState('');
+
+  // PERBAIKAN: Mengubah parameter agar sesuai dengan data yang dikirim
+  const handleGenerateQuestions = async (userPrompt: string, material: { content: string, type: string } | null) => {
     setIsGenerating(true);
     setQuestions([]);
-    
+
     try {
-      const response = await fetch('/api/generate', {
+      // PERBAIKAN: Menggunakan URL absolut ke backend server
+      const response = await fetch('http://localhost:8080/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // Mengirim materialData ke backend (Base64 + type)
-        body: JSON.stringify({ 
-            prompt, 
-            materialData: material 
+        // PERBAIKAN: Mengirim data dengan format baru yang diharapkan backend
+        body: JSON.stringify({
+          subject: selectedSubject,
+          grade: selectedGrade,
+          userPrompt: userPrompt,
+          materialData: material
         }),
       });
 
@@ -44,7 +48,7 @@ function App() {
         }
         // Tambahkan penanganan error khusus dari backend saat parsing file
         if (friendlyErrorMessage.includes('Gagal memproses file')) {
-             throw new Error(friendlyErrorMessage);
+          throw new Error(friendlyErrorMessage);
         }
         throw new Error(friendlyErrorMessage);
       }
@@ -55,17 +59,17 @@ function App() {
       } else {
         throw new Error("Format respons dari server tidak valid.");
       }
-      
+
     } catch (error) {
       console.error('Error generating questions:', error);
       if (error instanceof Error) {
         if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-            alert("Gagal terhubung ke server backend. Pastikan server backend Anda berjalan dan variabel VITE_API_BASE_URL sudah benar.");
+          alert("Gagal terhubung ke server backend. Pastikan server backend Anda berjalan dan variabel VITE_API_BASE_URL sudah benar.");
         } else {
-            alert(`Gagal membuat soal: ${error.message}`);
+          alert(`Gagal membuat soal: ${error.message}`);
         }
       } else {
-          alert("Gagal membuat soal karena error tak terduga.");
+        alert("Gagal membuat soal karena error tak terduga.");
       }
     } finally {
       setIsGenerating(false);
@@ -85,10 +89,10 @@ function App() {
     setCustomPrompt('');
     setQuestions([]);
     setCurrentStep(1);
-    setRequestedDifficulty(''); 
+    setRequestedDifficulty('');
     // BARU: Reset state materi
-    setMaterialData(null); 
-    setFileName(''); 
+    setMaterialData(null);
+    setFileName('');
   };
 
   return (
@@ -122,24 +126,22 @@ function App() {
         <div className="max-w-4xl mx-auto">
           {currentStep === 1 && <SubjectSelector selectedSubject={selectedSubject} onSubjectChange={setSelectedSubject} />}
           {currentStep === 2 && <GradeSelector selectedGrade={selectedGrade} onGradeChange={setSelectedGrade} />}
-          {currentStep === 3 && <PromptBuilder 
-            customPrompt={customPrompt} 
-            onPromptChange={setCustomPrompt} 
-            onDifficultyChange={setRequestedDifficulty} 
-            subject={selectedSubject} 
-            grade={selectedGrade}
+          {currentStep === 3 && <PromptBuilder
+            customPrompt={customPrompt}
+            onPromptChange={setCustomPrompt}
+            onDifficultyChange={setRequestedDifficulty}
             // BARU: Meneruskan materialData dan fungsi update
             materialData={materialData}
             onMaterialDataChange={setMaterialData}
             fileName={fileName}
             onFileNameChange={setFileName}
-            />}
-          
-          {currentStep === 4 && <QuestionDisplay 
-            questions={questions} 
-            isGenerating={isGenerating} 
+          />}
+
+          {currentStep === 4 && <QuestionDisplay
+            questions={questions}
+            isGenerating={isGenerating}
             // Mengirim prompt dan materialData saat regenerate
-            onRegenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)} 
+            onRegenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)}
             prompt={customPrompt}
             requestedDifficulty={requestedDifficulty}
             subject={selectedSubject}
@@ -158,12 +160,12 @@ function App() {
               Lanjutkan
             </button>
           )}
-          {currentStep === 3 && <QuestionGenerator 
-            onGenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)} 
-            isGenerating={isGenerating} 
-            disabled={!canProceedToNext()} 
-            prompt={customPrompt} 
-            />}
+          {currentStep === 3 && <QuestionGenerator
+            onGenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)}
+            isGenerating={isGenerating}
+            disabled={!canProceedToNext()}
+            prompt={customPrompt}
+          />}
           {currentStep === 4 && (
             <button onClick={resetForm} className="w-full sm:w-auto px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 hover:from-green-700 hover:to-blue-700 text-white rounded-lg font-medium transition-colors">
               Buat Soal Baru
