@@ -177,6 +177,12 @@ function App() {
             </button>
           )}
         </div>
+
+        {/* Watermark / Footer */}
+        <div className="mt-16 text-center space-y-1 opacity-50 hover:opacity-100 transition-opacity duration-300">
+          <p className="text-sm text-gray-300 font-medium">Pembuatan soal tingkat SD otomatis menggunakan AI</p>
+          <p className="text-xs text-gray-400">Dikembangkan oleh Galuh Wikri Ramadhan</p>
+        </div>
       </div>
       <FeedbackButton />
     </div>
