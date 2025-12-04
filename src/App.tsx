@@ -6,6 +6,7 @@ import PromptBuilder from './components/PromptBuilder';
 import QuestionGenerator from './components/QuestionGenerator';
 import QuestionDisplay from './components/QuestionDisplay';
 import { Question } from './types/Question';
+import FeedbackButton from './components/FeedbackButton';
 
 function App() {
   const [selectedSubject, setSelectedSubject] = useState('');
@@ -177,6 +178,7 @@ function App() {
           )}
         </div>
       </div>
+      <FeedbackButton />
     </div>
   );
 }
