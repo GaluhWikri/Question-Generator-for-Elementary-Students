@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Calculator, Globe, FlaskRound as Flask, Palette, Music } from 'lucide-react';
+import { BookOpen, Calculator, Globe, FlaskRound as Flask, Palette, Music, Languages } from 'lucide-react';
 
 interface SubjectSelectorProps {
   selectedSubject: string;
@@ -9,6 +9,7 @@ interface SubjectSelectorProps {
 const subjects = [
   { id: 'Matematika', name: 'Matematika', icon: Calculator, color: 'from-blue-500 to-cyan-500' },
   { id: 'Bahasa-indonesia', name: 'Bahasa Indonesia', icon: BookOpen, color: 'from-green-500 to-emerald-500' },
+  { id: 'Bahasa-inggris', name: 'Bahasa Inggris', icon: Languages, color: 'from-blue-600 to-indigo-600' },
   { id: 'IPA', name: 'IPA', icon: Flask, color: 'from-purple-500 to-pink-500' },
   { id: 'IPS', name: 'IPS', icon: Globe, color: 'from-orange-500 to-red-500' },
   { id: 'seni-budaya', name: 'Seni Budaya', icon: Palette, color: 'from-yellow-500 to-orange-500' },
@@ -32,8 +33,8 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSu
               onClick={() => onSubjectChange(subject.id)}
               className={`
                 group relative p-6 rounded-xl transition-all duration-300 transform hover:scale-105
-                ${selectedSubject === subject.id 
-                  ? 'bg-gradient-to-r ' + subject.color + ' shadow-2xl' 
+                ${selectedSubject === subject.id
+                  ? 'bg-gradient-to-r ' + subject.color + ' shadow-2xl'
                   : 'bg-gray-700/50 hover:bg-gray-600/50'
                 }
               `}
@@ -41,8 +42,8 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSu
               <div className="flex flex-col items-center">
                 <div className={`
                   p-4 rounded-full mb-4 transition-all duration-300
-                  ${selectedSubject === subject.id 
-                    ? 'bg-white/20' 
+                  ${selectedSubject === subject.id
+                    ? 'bg-white/20'
                     : 'bg-gray-600 group-hover:bg-gray-500'
                   }
                 `}>
@@ -52,7 +53,7 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSu
                   {subject.name}
                 </h3>
               </div>
-              
+
               {selectedSubject === subject.id && (
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
               )}
