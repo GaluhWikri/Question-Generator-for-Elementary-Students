@@ -158,8 +158,7 @@ app.post("/api/generate", async (request, response) => {
     ? "Gunakan hanya MATERI SUMBER SOAL yang diberikan sebagai sumber pengetahuan, tetapi JANGAN pernah menyatakan bahwa informasi tersebut berasal dari materi."
     : "Akses pengetahuan Anda tentang topik tersebut.";
 
-  // --- PROMPT SISTEM YANG DISEMPURNAKAN ---
-  // Mengadopsi prinsip dari acuan untuk kualitas yang lebih tinggi.
+
   // --- PROMPT SISTEM YANG DISEMPURNAKAN (VERSI 2.0) ---
   const system_prompt = `Anda adalah "MASTER TEACHER" dan PENGEMBANG KURIKULUM AHLI untuk Sekolah Dasar (SD) di Indonesia. Anda menguasai Kurikulum Merdeka dan K13 secara mendalam.
 Tujuan Anda: Menghasilkan butir soal yang SEMPURNA, AKURAT, BERKUALITAS TINGGI, dan PEDAGOGIS.
