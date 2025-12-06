@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Calculator, Globe, FlaskRound as Flask, Palette, Music, Languages } from 'lucide-react';
+import { BookOpen, Calculator, Globe, FlaskRound as Flask, Palette, Music, Languages, Shield } from 'lucide-react';
 
 interface SubjectSelectorProps {
   selectedSubject: string;
@@ -10,6 +10,7 @@ const subjects = [
   { id: 'Matematika', name: 'Matematika', icon: Calculator, color: 'from-blue-500 to-cyan-500' },
   { id: 'Bahasa-indonesia', name: 'Bahasa Indonesia', icon: BookOpen, color: 'from-green-500 to-emerald-500' },
   { id: 'Bahasa-inggris', name: 'Bahasa Inggris', icon: Languages, color: 'from-blue-600 to-indigo-600' },
+  { id: 'pendidikan-pancasila', name: 'Pendidikan Pancasila', icon: Shield, color: 'from-amber-500 to-orange-600' },
   { id: 'IPA', name: 'IPA', icon: Flask, color: 'from-purple-500 to-pink-500' },
   { id: 'IPS', name: 'IPS', icon: Globe, color: 'from-orange-500 to-red-500' },
   { id: 'seni-budaya', name: 'Seni Budaya', icon: Palette, color: 'from-yellow-500 to-orange-500' },
@@ -24,7 +25,7 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSu
         <p className="text-gray-300">Pilih mata pelajaran yang ingin dibuatkan soalnya</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {subjects.map((subject) => {
           const Icon = subject.icon;
           return (
