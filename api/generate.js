@@ -227,7 +227,9 @@ Output HANYA JSON valid.
     // PERBAIKAN: Membangun prompt final di backend
     const finalPrompt = `Mata Pelajaran: ${subject}, Kelas: ${grade}. \n\nPermintaan Pengguna: ${userPrompt}`;
 
-    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`;
+    const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+            // Endpoint ke Gemini API (Switching to 2.5 Pro)
+   // const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${GEMINI_API_KEY}`;
 
     // Helper Function: Retry Mechanism
     const fetchWithRetry = async (url, options, retries = 3, backoff = 1000) => {
