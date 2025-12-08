@@ -1,7 +1,7 @@
 // src/components/PromptBuilder.tsx
 
 import React, { useState, useEffect } from 'react';
-import { MessageSquare, Lightbulb, Target, Clock, BarChart3, FileText, XCircle } from 'lucide-react';
+import { MessageSquare, Lightbulb, Gauge, ListChecks, Hash, FileText, XCircle } from 'lucide-react';
 
 interface PromptBuilderProps {
   customPrompt: string;
@@ -37,13 +37,13 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
       'hard': 'sulit',
       'mixed': 'campur'
     };
-    
+
     const typeMap: { [key: string]: string } = {
       'multiple-choice': 'pilihan ganda',
       'fill-blank': 'isian singkat',
       'essay': 'uraian/essay'
     };
-    
+
     const displayDifficulty = difficultyMap[difficulty] || difficulty;
 
     // PERBAIKAN: Prompt sekarang lebih sederhana, karena detail subjek dan kelas ditangani backend.
@@ -131,7 +131,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         {/* Question Count */}
         <div className="bg-gray-700/50 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
-            <BarChart3 className="w-6 h-6 text-blue-400" />
+            <Hash className="w-6 h-6 text-blue-400" />
             <label className="text-white font-semibold">Jumlah Soal</label>
           </div>
           <div className="flex items-center gap-4">
@@ -150,7 +150,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         {/* Difficulty */}
         <div className="bg-gray-700/50 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Target className="w-6 h-6 text-green-400" />
+            <Gauge className="w-6 h-6 text-green-400" />
             <label className="text-white font-semibold">Tingkat Kesulitan</label>
           </div>
           <select
@@ -168,7 +168,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         {/* Question Type */}
         <div className="bg-gray-700/50 rounded-xl p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Clock className="w-6 h-6 text-orange-400" />
+            <ListChecks className="w-6 h-6 text-orange-400" />
             <label className="text-white font-semibold">Jenis Soal</label>
           </div>
           <select
@@ -214,7 +214,7 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
               Hapus
             </button>
           </div>
-        ) : ( 
+        ) : (
           <>
             <label htmlFor="material-upload" className="block w-full text-center p-4 border-2 border-dashed border-indigo-500 rounded-lg cursor-pointer hover:bg-gray-600/50 transition-colors">
               <p className="text-indigo-400 font-medium">Klik untuk upload file</p>
