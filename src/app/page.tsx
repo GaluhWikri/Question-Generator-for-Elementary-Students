@@ -1,14 +1,16 @@
+'use client';
+
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
-import SubjectSelector from './components/SubjectSelector';
-import GradeSelector from './components/GradeSelector';
-import PromptBuilder from './components/PromptBuilder';
-import QuestionGenerator from './components/QuestionGenerator';
-import QuestionDisplay from './components/QuestionDisplay';
-import FeedbackButton from './components/FeedbackButton'; // Import component
-import { Question } from './types/Question';
+import SubjectSelector from '@/components/SubjectSelector';
+import GradeSelector from '@/components/GradeSelector';
+import PromptBuilder from '@/components/PromptBuilder';
+import QuestionGenerator from '@/components/QuestionGenerator';
+import QuestionDisplay from '@/components/QuestionDisplay';
+import FeedbackButton from '@/components/FeedbackButton';
+import { Question } from '@/types/Question';
 
-function App() {
+export default function Home() {
   const [selectedSubject, setSelectedSubject] = useState('');
   const [selectedGrade, setSelectedGrade] = useState('');
   const [customPrompt, setCustomPrompt] = useState('');
@@ -28,10 +30,8 @@ function App() {
     setQuestions([]);
 
     try {
-      // --- PERBAIKAN KRUSIAL UNTUK DEPLOYMENT ---
-      // Gunakan variabel lingkungan untuk base URL, atau gunakan path relatif untuk produksi.
-      const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || '';
-      const apiUrl = `${apiBaseUrl}/api/generate`;
+      // Di Next.js, API route ada di /api/generate relatif terhadap domain
+      const apiUrl = '/api/generate';
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -70,11 +70,7 @@ function App() {
     } catch (error) {
       console.error('Error generating questions:', error);
       if (error instanceof Error) {
-        if (error.name === 'TypeError' && error.message.includes('Failed to fetch')) {
-          alert("Gagal terhubung ke server backend. Pastikan server backend Anda berjalan dan variabel VITE_API_BASE_URL sudah benar.");
-        } else {
-          alert(`Gagal membuat soal: ${error.message}`);
-        }
+        alert(`Gagal membuat soal: ${error.message}`);
       } else {
         alert("Gagal membuat soal karena error tak terduga.");
       }
@@ -109,7 +105,7 @@ function App() {
       {/* MOBILE HEADER */}
       <div className="md:hidden flex items-center justify-between p-4 bg-slate-900 border-b border-gray-800 z-50 shrink-0 absolute top-0 left-0 right-0">
         <div className="flex items-center gap-3">
-          <img src="/icon/icon1.png" alt="Logo" className="w-8 h-8" />
+          <img src="/icon/icon.svg" alt="Logo" className="w-8 h-8" />
           <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-blue-500">
             SOAL GW
           </span>
@@ -280,5 +276,3 @@ function App() {
     </div>
   );
 }
-
-export default App;

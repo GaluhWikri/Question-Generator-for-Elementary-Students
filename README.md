@@ -1,69 +1,36 @@
-# 🧠 AI Question Generator untuk Siswa SD (Sekolah Dasar)
+This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Tech Stack: React | Gemini AI | Node.js](https://img.shields.io/badge/Tech%20Stack-React%20%7C%20Gemini%20AI%20%7C%20Node.js-informational)](https://github.com/google/gemini-2.5-pro)
+## Getting Started
 
-Selamat datang di **AI Question Generator**, sebuah alat berbasis web yang memanfaatkan kekuatan Model Bahasa Besar (LLM) dari Google Gemini untuk secara otomatis membuat soal-soal latihan yang relevan dengan kurikulum Sekolah Dasar (SD) di Indonesia.
-https://question-generator-for-elementary-s.vercel.app/
+First, run the development server:
 
-## ✨ Fitur Utama
+```bash
+npm run dev
+# or
+yarn dev
+# or
+pnpm dev
+# or
+bun dev
+```
 
-* **Pembuatan Soal Cerdas:** Menghasilkan soal-soal dalam Bahasa Indonesia yang disesuaikan untuk berbagai tingkat kelas (Kelas 1-6) dan mata pelajaran (Matematika, IPA, Bahasa Indonesia, dll.).
-* **Kustomisasi Mendalam:** Kontrol jumlah soal, tingkat kesulitan (**Mudah, Sedang, Sulit, Campur**), dan jenis soal (Pilihan Ganda atau Isian).
-* **Antarmuka Bertahap:** Alur kerja yang intuitif dalam 4 langkah: Pilih Mata Pelajaran, Pilih Kelas, Atur Prompt, dan Lihat Hasil.
-* **Export Praktis:** Soal yang telah dihasilkan dapat diunduh langsung dalam format PDF, lengkap dengan kunci jawaban, siap untuk dicetak.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## 💻 Tumpukan Teknologi (Tech Stack)
+You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-Aplikasi ini dibangun dengan fokus pada modernitas, kecepatan, dan performa:
+This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
-* **Frontend:** `React` & `TypeScript` dengan `Vite` untuk performa *bundling* yang cepat.
-* **Backend (API):** `Node.js` & `Express.js` untuk menghandle *request* ke API AI.
-* **Generative AI:** Menggunakan **Google Gemini 2.5 PRO** untuk memastikan hasil soal yang berkualitas dan dalam format JSON yang terstruktur.
-* **Styling:** `Tailwind CSS` untuk desain yang cepat dan menarik.
+## Learn More
 
-## 🚀 Instalasi dan Menjalankan Proyek (Lokal)
+To learn more about Next.js, take a look at the following resources:
 
-Ikuti panduan di bawah ini untuk menjalankan aplikasi di mesin lokal Anda.
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-### Prasyarat
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-* [Node.js](https://nodejs.org/) (Disarankan versi 18+)
-* Kunci API Google Gemini (dapat diperoleh dari Google AI Studio)
+## Deploy on Vercel
 
-### Langkah-Langkah
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
-1.  **Klon Repositori:**
-    ```bash
-    git clone <URL_REPOSitori_ANDA>
-    cd <NAMA_FOLDER_PROYEK>
-    ```
-
-2.  **Instal Dependensi:**
-    ```bash
-    npm install
-    ```
-
-3.  **Konfigurasi Lingkungan:**
-    Buat file bernama `.env` di *root* proyek dan tambahkan Kunci API Gemini Anda:
-    ```env
-    GEMINI_API_KEY="PASTE_KUNCI_API_GEMINI_ANDA_DI_SINI"
-    # URL Backend untuk Frontend (default: http://localhost:8080)
-    VITE_API_BASE_URL="http://localhost:8080" 
-    ```
-
-4.  **Jalankan Server Backend:**
-    Buka terminal pertama dan jalankan server Node.js:
-    ```bash
-    npm start
-    # Server akan berjalan di http://localhost:8080
-    ```
-
-5.  **Jalankan Frontend (Aplikasi Web):**
-    Buka terminal kedua dan jalankan aplikasi Vite:
-    ```bash
-    npm run dev
-    # Aplikasi akan terbuka di browser (biasanya http://localhost:5173)
-    ```
-
-## 🛠️ Struktur Proyek
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
