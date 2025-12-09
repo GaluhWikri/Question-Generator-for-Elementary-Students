@@ -12,10 +12,12 @@ const FeedbackButton: React.FC = () => {
             data-tally-layout="modal"
             data-tally-emoji-text="👋"
             data-tally-emoji-animation="wave"
-            className="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 bg-white text-purple-900 rounded-full shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 font-semibold group"
+            className="w-full flex items-center gap-3 px-4 py-3 bg-purple-600/20 hover:bg-purple-600/30 text-purple-300 rounded-xl border border-purple-500/30 transition-all duration-300 group"
         >
-            <MessageSquarePlus className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-            <span>Feedback</span>
+            <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                <MessageSquarePlus className="w-4 h-4" />
+            </div>
+            <span className="font-medium text-sm">Tanggapan</span>
         </button>
     );
 };

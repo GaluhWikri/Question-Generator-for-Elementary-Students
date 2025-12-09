@@ -118,21 +118,21 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
 
 
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <MessageSquare className="w-8 h-8 text-purple-400" />
-          <h2 className="text-2xl font-bold text-white">Buat Prompt Soal</h2>
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-gray-700">
+      <div className="text-center mb-6 md:mb-8">
+        <div className="flex items-center justify-center gap-3 mb-2 md:mb-4">
+          <MessageSquare className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
+          <h2 className="text-xl md:text-2xl font-bold text-white">Buat Prompt Soal</h2>
         </div>
-        <p className="text-gray-300">Sesuaikan detail soal yang ingin dibuat</p>
+        <p className="text-sm md:text-base text-gray-300">Sesuaikan detail soal yang ingin dibuat</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Question Count */}
-        <div className="bg-gray-700/50 rounded-xl p-6">
+        <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Hash className="w-6 h-6 text-blue-400" />
-            <label className="text-white font-semibold">Jumlah Soal</label>
+            <Hash className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
+            <label className="text-white font-semibold text-sm md:text-base">Jumlah Soal</label>
           </div>
           <div className="flex items-center gap-4">
             <input
@@ -148,15 +148,15 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         </div>
 
         {/* Difficulty */}
-        <div className="bg-gray-700/50 rounded-xl p-6">
+        <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Gauge className="w-6 h-6 text-green-400" />
-            <label className="text-white font-semibold">Tingkat Kesulitan</label>
+            <Gauge className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
+            <label className="text-white font-semibold text-sm md:text-base">Tingkat Kesulitan</label>
           </div>
           <select
             value={difficulty}
             onChange={handleDifficultyChange}
-            className="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full p-2 md:p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm md:text-base"
           >
             <option value="easy">Mudah</option>
             <option value="medium">Sedang</option>
@@ -166,15 +166,15 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         </div>
 
         {/* Question Type */}
-        <div className="bg-gray-700/50 rounded-xl p-6">
+        <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <ListChecks className="w-6 h-6 text-orange-400" />
-            <label className="text-white font-semibold">Jenis Soal</label>
+            <ListChecks className="w-5 h-5 md:w-6 md:h-6 text-orange-400" />
+            <label className="text-white font-semibold text-sm md:text-base">Jenis Soal</label>
           </div>
           <select
             value={questionType}
             onChange={(e) => setQuestionType(e.target.value)}
-            className="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full p-2 md:p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm md:text-base"
           >
             <option value="multiple-choice">Pilihan Ganda</option>
             <option value="fill-blank">Isian Singkat</option>
@@ -183,41 +183,41 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
         </div>
 
         {/* Topic */}
-        <div className="bg-gray-700/50 rounded-xl p-6">
+        <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <Lightbulb className="w-6 h-6 text-yellow-400" />
-            <label className="text-white font-semibold">Topik Khusus (Opsional)</label>
+            <Lightbulb className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
+            <label className="text-white font-semibold text-sm md:text-base">Topik Khusus (Opsional)</label>
           </div>
           <input
             type="text"
             value={topic}
             onChange={(e) => setTopic(e.target.value)}
             placeholder="Contoh: Penjumlahan, Membaca, dll."
-            className="w-full p-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+            className="w-full p-2 md:p-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm md:text-base"
           />
         </div>
       </div>
 
       {/* File Upload / Text Area Section */}
-      <div className="md:col-span-2 bg-gray-700/50 rounded-2xl p-6 mt-6">
+      <div className="md:col-span-2 bg-gray-700/50 rounded-2xl p-4 md:p-6 mt-4 md:mt-6">
         <div className="flex items-center gap-3 mb-4">
-          <FileText className="w-6 h-6 text-indigo-400" />
-          <label className="text-white font-semibold">Upload Materi Sumber (Opsional)</label>
+          <FileText className="w-5 h-5 md:w-6 md:h-6 text-indigo-400" />
+          <label className="text-white font-semibold text-sm md:text-base">Upload Materi Sumber (Opsional)</label>
         </div>
 
         {materialData && materialData.content.length > 0 ? (
           <div className="bg-gray-600 border border-indigo-500 p-3 rounded-lg flex items-center justify-between">
             {/* Menampilkan informasi file/teks yang sudah di-load */}
-            <span className="text-white text-sm truncate">{fileName || ''} ({materialData.content.length} karakter)</span>
-            <button onClick={clearMaterial} className="text-red-400 hover:text-red-500 flex items-center gap-1">
-              <XCircle className="w-5 h-5" />
+            <span className="text-white text-xs md:text-sm truncate max-w-[200px] md:max-w-md">{fileName || ''} ({materialData.content.length} karakter)</span>
+            <button onClick={clearMaterial} className="text-red-400 hover:text-red-500 flex items-center gap-1 text-sm">
+              <XCircle className="w-4 h-4 md:w-5 md:h-5" />
               Hapus
             </button>
           </div>
         ) : (
           <>
             <label htmlFor="material-upload" className="block w-full text-center p-4 border-2 border-dashed border-indigo-500 rounded-lg cursor-pointer hover:bg-gray-600/50 transition-colors">
-              <p className="text-indigo-400 font-medium">Klik untuk upload file</p>
+              <p className="text-indigo-400 font-medium text-sm md:text-base">Klik untuk upload file</p>
               <p className="text-xs text-gray-400 mt-1">Dukungan: .TXT, .PDF, .DOCX (Max 5MB)</p>
               <input
                 id="material-upload"

@@ -19,13 +19,13 @@ const subjects = [
 
 const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSubjectChange }) => {
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-8 border border-gray-700">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold text-white mb-2">Pilih Mata Pelajaran</h2>
-        <p className="text-gray-300">Pilih mata pelajaran yang ingin dibuatkan soalnya</p>
+    <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-gray-700">
+      <div className="text-center mb-6 md:mb-8">
+        <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Pilih Mata Pelajaran</h2>
+        <p className="text-sm md:text-base text-gray-300">Pilih mata pelajaran yang ingin dibuatkan soalnya</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
         {subjects.map((subject) => {
           const Icon = subject.icon;
           return (
@@ -33,7 +33,7 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSu
               key={subject.id}
               onClick={() => onSubjectChange(subject.id)}
               className={`
-                group relative p-6 rounded-xl transition-all duration-300 transform hover:scale-105
+                group relative p-3 md:p-6 rounded-xl transition-all duration-300 transform hover:scale-105
                 ${selectedSubject === subject.id
                   ? 'bg-gradient-to-r ' + subject.color + ' shadow-2xl'
                   : 'bg-gray-700/50 hover:bg-gray-600/50'
@@ -42,15 +42,15 @@ const SubjectSelector: React.FC<SubjectSelectorProps> = ({ selectedSubject, onSu
             >
               <div className="flex flex-col items-center">
                 <div className={`
-                  p-4 rounded-full mb-4 transition-all duration-300
+                  p-3 md:p-4 rounded-full mb-2 md:mb-4 transition-all duration-300
                   ${selectedSubject === subject.id
                     ? 'bg-white/20'
                     : 'bg-gray-600 group-hover:bg-gray-500'
                   }
                 `}>
-                  <Icon className="w-8 h-8 text-white" />
+                  <Icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-white text-center">
+                <h3 className="text-sm md:text-lg font-semibold text-white text-center">
                   {subject.name}
                 </h3>
               </div>
