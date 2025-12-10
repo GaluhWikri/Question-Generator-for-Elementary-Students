@@ -25,9 +25,17 @@ export default function Home() {
   const [fileName, setFileName] = useState('');
 
   // PERBAIKAN: Mengubah parameter agar sesuai dengan data yang dikirim
-  const handleGenerateQuestions = async (userPrompt: string, material: { content: string, type: string } | null) => {
-    setIsGenerating(true);
-    setQuestions([]);
+  // BARU: State untuk loading saat append
+  const [isAppending, setIsAppending] = useState(false);
+
+  // PERBAIKAN: Mengubah parameter agar sesuai dengan data yang dikirim dan mendukung mode append
+  const handleGenerateQuestions = async (userPrompt: string, material: { content: string, type: string } | null, isAppendMode: boolean = false) => {
+    if (isAppendMode) {
+      setIsAppending(true);
+    } else {
+      setIsGenerating(true);
+      setQuestions([]);
+    }
 
     try {
       // Di Next.js, API route ada di /api/generate relatif terhadap domain
@@ -60,7 +68,11 @@ export default function Home() {
       }
 
       if (data.questions && Array.isArray(data.questions)) {
-        setQuestions(data.questions);
+        if (isAppendMode) {
+          setQuestions(prev => [...prev, ...data.questions]);
+        } else {
+          setQuestions(data.questions);
+        }
         setCurrentStep(4);
         setIsSidebarOpen(false); // Close sidebar on mobile when results arrive
       } else {
@@ -76,6 +88,7 @@ export default function Home() {
       }
     } finally {
       setIsGenerating(false);
+      setIsAppending(false);
     }
   };
 
@@ -219,7 +232,12 @@ export default function Home() {
             {currentStep === 4 && <QuestionDisplay
               questions={questions}
               isGenerating={isGenerating}
+              isAppending={isAppending}
               onRegenerateQuestions={() => handleGenerateQuestions(customPrompt, materialData)}
+              onAddQuestions={(config) => {
+                const appendPrompt = `${customPrompt}\n\n[INSTRUKSI WAJIB - MODE TAMBAHAN]:\n1. HANYA BUATKAN TEPAT ${config.count} SOAL BARU (JANGAN LEBIH, JANGAN KURANG).\n2. Tipe soal: ${config.type}.\n3. Abaikan permintaan jumlah soal dari prompt sebelumnya, ikuti instruksi ini: TEPAT ${config.count} SOAL.\n${config.instruction ? `4. Instruksi khusus: ${config.instruction}` : ''}`;
+                handleGenerateQuestions(appendPrompt, materialData, true);
+              }}
               prompt={customPrompt}
               requestedDifficulty={requestedDifficulty}
               subject={selectedSubject}

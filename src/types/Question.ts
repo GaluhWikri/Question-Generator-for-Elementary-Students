@@ -7,4 +7,5 @@ export interface Question {
   subject: string;
   grade: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
+  explanation?: string;
 }

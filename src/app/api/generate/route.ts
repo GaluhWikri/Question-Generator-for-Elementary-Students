@@ -194,9 +194,9 @@ Output HANYA JSON valid.
     {
       "type": "multiple-choice", // "fill-in-the-blank", "essay"
       "question": "Narasi soal / pertanyaan...",
-      "options": ["A", "B", "C", "D"], // Opsional
-      "correctAnswer": 0, // atau String
-      "explanation": "Penjelasan yang menguatkan pemahaman konsep."
+      "options": ["A", "B", "C", "D"], // WAJIB untuk multiple-choice, HAPUS untuk lainnya
+      "correctAnswer": 0, // JIKA multiple-choice: index integer (0-3). JIKA essay/isian: String jawaban teks.
+      "explanation": "Penjelasan / Kunci Jawaban Detail"
     }
   ]
 }
