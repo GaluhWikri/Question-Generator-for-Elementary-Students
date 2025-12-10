@@ -3,7 +3,6 @@ import { MessageSquarePlus } from 'lucide-react';
 
 const FeedbackButton: React.FC = () => {
     // Ganti "YOUR_FORM_ID" dengan ID form Tally Anda yang sebenarnya
-    // Contoh: data-tally-open="mD4K8r"
     const TALLY_FORM_ID = "RGxKbJ";
 
     return (
