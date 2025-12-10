@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Buffer } from "buffer";
 import mammoth from "mammoth";
-import * as pdfjsLib from "pdfjs-dist/build/pdf.mjs";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import dotenv from "dotenv";
 import path from "path";
 
 import { pathToFileURL } from "url";
 
 // Initialize PDF worker
-const workerPath = path.join(process.cwd(), 'node_modules/pdfjs-dist/build/pdf.worker.mjs');
+const workerPath = path.join(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
 pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
 
 function parseDirtyJson(dirtyJson: string) {
