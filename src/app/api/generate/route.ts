@@ -87,12 +87,16 @@ const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 
     }
 };
 
+// Set max duration for Vercel pro (hobby limits to 10s)
+export const maxDuration = 60;
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { subject, grade, userPrompt, materialData } = body;
 
         // --- DEBUGGING SECTION START ---
+        const startTime = Date.now();
         console.log("------------------------------------------");
         console.log("[DEBUG] API Hit Received");
         console.log("[DEBUG] CWD:", process.cwd());
@@ -214,8 +218,8 @@ Output HANYA JSON valid.
 
         const finalPrompt = `Mata Pelajaran: ${subject}, Kelas: ${grade}. \n\n${material_context}\n\nPermintaan Pengguna: ${userPrompt}`;
 
-        // Switch to faster model if possible, or keep 2.5-flash
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        // Switch to gemini-2.0-flash-exp (Fastest & Smartest available flash model)
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-exp:generateContent?key=${GEMINI_API_KEY}`;
 
         const geminiResponse = await fetchWithRetry(geminiUrl, {
             method: "POST",
