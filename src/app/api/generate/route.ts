@@ -210,13 +210,12 @@ Output HANYA JSON valid.
     - Apakah Kontekstual?
     - Nilai Karakter apa yang masuk?
 5.  Generate JSON.
+`;
 
-### INPUT PENGGUNA:
-${material_context}`;
+        const finalPrompt = `Mata Pelajaran: ${subject}, Kelas: ${grade}. \n\n${material_context}\n\nPermintaan Pengguna: ${userPrompt}`;
 
-        const finalPrompt = `Mata Pelajaran: ${subject}, Kelas: ${grade}. \n\nPermintaan Pengguna: ${userPrompt}`;
-
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
+        // Switch to faster model if possible, or keep 2.5-flash
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const geminiResponse = await fetchWithRetry(geminiUrl, {
             method: "POST",
@@ -235,7 +234,17 @@ ${material_context}`;
             }),
         });
 
-        const aiResponse = await geminiResponse.json();
+        // SAFETY NET: Cek response text dulu sebelum parse JSON
+        const responseText = await geminiResponse.text();
+
+        let aiResponse;
+        try {
+            aiResponse = JSON.parse(responseText);
+        } catch (e) {
+            console.error("CRITICAL ERROR: Failed to parse Gemini response as JSON.");
+            console.error("Raw Response Text:", responseText);
+            throw new Error(`AI memberikan respon yang tidak valid (bukan JSON). Status: ${geminiResponse.status}. Cek logs server.`);
+        }
 
         if (!geminiResponse.ok) {
             const errorMessage =
