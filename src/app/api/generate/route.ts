@@ -218,8 +218,8 @@ Output HANYA JSON valid.
 
         const finalPrompt = `Mata Pelajaran: ${subject}, Kelas: ${grade}. \n\n${material_context}\n\nPermintaan Pengguna: ${userPrompt}`;
 
-        // Switch to gemini-2.0-flash-exp (Fastest & Smartest available flash model)
-        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-exp:generateContent?key=${GEMINI_API_KEY}`;
+        // Switch to Gemini 2.5 Flash (Newest Model)
+        const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${GEMINI_API_KEY}`;
 
         const geminiResponse = await fetchWithRetry(geminiUrl, {
             method: "POST",
