@@ -1,15 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Buffer } from "buffer";
-import mammoth from "mammoth";
-import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
-import dotenv from "dotenv";
-import path from "path";
+// Note: mammoth & pdfjs imports are lazy-loaded inside extractTextFromMaterial
 
-import { pathToFileURL } from "url";
-
-// Initialize PDF worker
-const workerPath = path.join(process.cwd(), 'node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs');
-pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(workerPath).href;
+// Set max duration for Vercel pro (hobby limits to 10s)
+export const maxDuration = 60; // Just in case Vercel respects it
 
 function parseDirtyJson(dirtyJson: string) {
     const match = dirtyJson.match(/```json\s*([\s\S]*?)\s*```/);
@@ -31,6 +25,7 @@ function parseDirtyJson(dirtyJson: string) {
     }
 }
 
+// Fungsi untuk mengekstrak teks dari Base64 content (Lazy Loading Version)
 async function extractTextFromMaterial(materialData: { content: string, type: string }) {
     if (!materialData || !materialData.content) return "";
 
@@ -41,6 +36,16 @@ async function extractTextFromMaterial(materialData: { content: string, type: st
         if (type === "text/plain") {
             return buffer.toString("utf8");
         } else if (type === "application/pdf") {
+            // --- LAZY LOAD PDFJS ---
+            // Ini kunci agar Vercel tidak timeout saat startup!
+            const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+            // GUNAKAN CDN UNTUK WORKER (FIX CRASH VERCEL)
+            // Versi unpkg harus match dengan versi library yang terinstall. 
+            // Kita gunakan fallback generic atau spesifik.
+            const workerVersion = pdfjsLib.version || '3.11.174';
+            pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${workerVersion}/legacy/build/pdf.worker.min.mjs`;
+
             const uint8Array = new Uint8Array(buffer);
             const doc = await pdfjsLib.getDocument({ data: uint8Array }).promise;
             let allText = "";
@@ -55,13 +60,15 @@ async function extractTextFromMaterial(materialData: { content: string, type: st
             type.includes("word") ||
             type.includes("officedocument.wordprocessingml.document")
         ) {
+            // --- LAZY LOAD MAMMOTH ---
+            const mammoth = await import("mammoth");
             let result = await mammoth.extractRawText({ buffer: buffer });
             return result.value;
         }
     } catch (error: any) {
         console.error("Gagal mengekstrak teks dari file:", error);
         throw new Error(
-            `Gagal memproses file PDF,doc,text: ${error.message}. File mungkin rusak, terenkripsi, atau memiliki format yang kompleks.`
+            `Gagal memproses file: ${error.message}. File mungkin rusak atau format tidak didukung.`
         );
     }
 
@@ -87,45 +94,41 @@ const fetchWithRetry = async (url: string, options: any, retries = 3, backoff = 
     }
 };
 
-// Set max duration for Vercel pro (hobby limits to 10s)
-export const maxDuration = 60;
-
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { subject, grade, userPrompt, materialData } = body;
 
         // --- DEBUGGING SECTION START ---
-        const startTime = Date.now();
         console.log("------------------------------------------");
         console.log("[DEBUG] API Hit Received");
         console.log("[DEBUG] CWD:", process.cwd());
-        const envPath = path.resolve(process.cwd(), '.env.local');
-        console.log("[DEBUG] Expecting .env.local at:", envPath);
 
-        let GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-
-        if (!subject || !grade) {
-            return NextResponse.json({ error: { message: "Mata pelajaran dan kelas harus dipilih." } }, { status: 400 });
+        // Cek API Key
+        const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+        if (!GEMINI_API_KEY) {
+            console.error("[CRITICAL] GEMINI_API_KEY is missing!");
+            return NextResponse.json(
+                { error: { message: "Server misconfiguration: GEMINI_API_KEY is missing." } },
+                { status: 500 }
+            );
         }
 
+        // --- 1. Extract Text (Only if needed) ---
         let materialContent = "";
         if (materialData) {
+            console.log("[DEBUG] Processing material upload...");
             try {
                 materialContent = await extractTextFromMaterial(materialData);
+                console.log(`[DEBUG] Extracted text length: ${materialContent.length} chars`);
             } catch (error: any) {
+                console.error("[ERROR] Text extraction failed:", error);
                 return NextResponse.json({ error: { message: error.message } }, { status: 400 });
             }
         }
 
-        if (!GEMINI_API_KEY) {
-            return NextResponse.json({
-                error: {
-                    message: `Konfigurasi Gemini API belum diatur. CWD: ${process.cwd()}. Env Path: ${envPath}`,
-                },
-            }, { status: 500 });
-        }
-
+        // --- PROMPT CONSTRUCTION ---
+        // Jika ada materi, masukkan ke Prompt Pengguna (Context)
         const material_context = materialContent
             ? `\n\n### MATERI SUMBER SOAL:\n\n${materialContent}\n\n`
             : "";
@@ -208,8 +211,7 @@ Output HANYA JSON valid.
 ### 5. PROSES BERPIKIR INTERNAL
 1.  **Identifikasi Fase**: Cek Kelas (1-2=A, 3-4=B, 5-6=C). Tentukan Tone & Level Kognitif.
 2.  **Cek Mapel**: Jika IPAS tapi Kelas 1-2 -> Alihkan ke muatan lisan/umum atau tolak halus (tapi sebaiknya generate level dasar pengenalan lingkungan).
-3.  ${knowledge_source}
-4.  **Konstruksi 21st Century**:
+3.  **Konstruksi 21st Century**:
     - Apakah soal ini Student-Centered?
     - Apakah Kontekstual?
     - Nilai Karakter apa yang masuk?
@@ -241,25 +243,28 @@ Output HANYA JSON valid.
         // SAFETY NET: Cek response text dulu sebelum parse JSON
         const responseText = await geminiResponse.text();
 
+        // Debug output jika error
+        if (!geminiResponse.ok) {
+            console.error(`[AI ERROR] Status: ${geminiResponse.status}`);
+            console.error(`[AI ERROR] Body: ${responseText}`);
+
+            // Khusus Error 404 Model Not Found
+            if (geminiResponse.status === 404 && responseText.includes("not found")) {
+                return NextResponse.json({
+                    error: { message: "Model AI (Gemini 2.5) belum tersedia. Silakan ganti ke 1.5 Flash." }
+                }, { status: 404 });
+            }
+
+            throw new Error(`Gemini API Error ${geminiResponse.status}: ${responseText}`);
+        }
+
         let aiResponse;
         try {
             aiResponse = JSON.parse(responseText);
         } catch (e) {
             console.error("CRITICAL ERROR: Failed to parse Gemini response as JSON.");
             console.error("Raw Response Text:", responseText);
-            throw new Error(`AI memberikan respon yang tidak valid (bukan JSON). Status: ${geminiResponse.status}. Cek logs server.`);
-        }
-
-        if (!geminiResponse.ok) {
-            const errorMessage =
-                aiResponse.error?.message ||
-                `Gemini API request failed with status: ${geminiResponse.status}`;
-            console.error("Gemini API Error:", errorMessage);
-            return NextResponse.json({
-                error: {
-                    message: `Gagal memanggil Gemini API. Status: ${geminiResponse.status}. Pesan: ${errorMessage}`,
-                },
-            }, { status: geminiResponse.status });
+            throw new Error(`AI memberikan respon yang bukan JSON valid. Cek log server.`);
         }
 
         const generatedText = aiResponse.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -293,6 +298,10 @@ Output HANYA JSON valid.
 
     } catch (error: any) {
         console.error("Internal Server Error:", error);
-        return NextResponse.json({ error: { message: `Internal Server Error: ${error.message}` } }, { status: 500 });
+        // Pastikan return JSON error yang valid agar frontend bisa baca
+        return NextResponse.json(
+            { error: { message: `Server Error: ${error.message}` } },
+            { status: 500 }
+        );
     }
 }
