@@ -4,7 +4,7 @@ import { parsePdfBuffer } from "../../../lib/pdfHelper"; // Helper PDF
 import { parseDocxBuffer } from "../../../lib/docxHelper"; // Helper Word
 import { SYSTEM_PROMPT } from "../../../lib/promptGenerator"; // Helper Prompt
 
-export const maxDuration = 60; // Timeout Vercel
+export const maxDuration = 60; // Timeout deployment
 
 // --- UTILS: JSON CLEANER ---
 function parseDirtyJson(dirtyJson: string) {
@@ -169,3 +169,5 @@ export async function POST(request: NextRequest) {
         );
     }
 }
+
+
