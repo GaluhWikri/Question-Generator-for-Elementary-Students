@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, HelpCircle } from 'lucide-react';
 import SubjectSelector from '@/components/SubjectSelector';
 import GradeSelector from '@/components/GradeSelector';
 import PromptBuilder from '@/components/PromptBuilder';
 import QuestionGenerator from '@/components/QuestionGenerator';
 import QuestionDisplay from '@/components/QuestionDisplay';
 import FeedbackButton from '@/components/FeedbackButton';
+import FAQModal from '@/components/FAQSection';
 import { Question } from '@/types/Question';
 
 export default function Home() {
@@ -19,6 +20,7 @@ export default function Home() {
   const [currentStep, setCurrentStep] = useState(1);
   const [requestedDifficulty, setRequestedDifficulty] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isFAQOpen, setIsFAQOpen] = useState(false); // State FAQ Modal
 
   // BARU: State untuk menyimpan Base64 content dan tipe file
   const [materialData, setMaterialData] = useState<{ content: string, type: string } | null>(null);
@@ -198,7 +200,17 @@ export default function Home() {
         </nav>
 
         {/* FEEDBACK BUTTON IN SIDEBAR */}
-        <div className="px-3 pb-2 shrink-0">
+        <div className="px-3 pb-2 shrink-0 space-y-3">
+          <button
+            onClick={() => { setIsFAQOpen(true); setIsSidebarOpen(false); }}
+            className="w-full flex items-center gap-3 px-4 py-3 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 rounded-xl border border-blue-500/30 transition-all duration-300 group"
+          >
+            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <HelpCircle className="w-4 h-4" />
+            </div>
+            <span className="font-medium text-sm">FAQ & Bantuan</span>
+          </button>
+
           <FeedbackButton />
         </div>
 
@@ -291,6 +303,8 @@ export default function Home() {
           )}
         </div>
       </main>
+      {/* FAQ Modal (Rendered outside main for full screen overlay) */}
+      <FAQModal isOpen={isFAQOpen} onClose={() => setIsFAQOpen(false)} />
     </div>
   );
 }
