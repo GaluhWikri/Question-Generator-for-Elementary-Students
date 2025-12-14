@@ -26,6 +26,44 @@ const formatText = (text: string, doc: jsPDF, startX: number, startY: number, ma
   return lines.length * doc.getLineHeight();
 };
 
+const ImageWithLoader = ({ prompt }: { prompt: string }) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+
+  const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", high quality, 4k, digital art, clear detailed vector, educational content, white background, no text, no blur")}`;
+
+  return (
+    <div className="mb-4 flex flex-col items-center md:items-start">
+      <div className={`relative rounded-lg overflow-hidden border border-slate-700 shadow-md bg-white ${isLoading ? 'min-h-[200px] w-full max-w-[300px] flex items-center justify-center bg-slate-800' : ''}`}>
+
+        {/* Loading Skeleton / Spinner */}
+        {isLoading && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center bg-slate-800 text-gray-400 p-4 text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400 mb-2"></div>
+            <span className="text-xs animate-pulse">Sedang menggambar...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {hasError && (
+          <div className="p-8 text-center text-red-400 text-sm bg-slate-800 w-full">
+            Gagal memuat gambar.
+          </div>
+        )}
+
+        {/* The Actual Image */}
+        <img
+          src={imageUrl}
+          alt="Ilustrasi Soal"
+          className={`max-h-60 w-auto object-contain transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
+          onLoad={() => setIsLoading(false)}
+          onError={() => { setIsLoading(false); setHasError(true); }}
+        />
+      </div>
+    </div>
+  );
+};
+
 const QuestionDisplay = ({ questions, isGenerating, isAppending, onRegenerateQuestions, onAddQuestions, subject, grade, requestedDifficulty }: QuestionDisplayProps) => {
   const [showAnswers, setShowAnswers] = useState(false);
 
@@ -192,17 +230,7 @@ const QuestionDisplay = ({ questions, isGenerating, isAppending, onRegenerateQue
           <p className="font-semibold mb-3 md:mb-4 text-base md:text-lg">
             <span className="text-purple-400 mr-2">{index + 1}.</span>{q.question}
           </p>
-          {q.imagePrompt && (
-            <div className="mb-4 flex justify-center md:justify-start">
-              {/* Added enhance=true and specific style seeds to force better quality */}
-              <img
-                src={`https://image.pollinations.ai/prompt/${encodeURIComponent(q.imagePrompt + ", high quality, 4k, digital art, clear detailed vector, educational content, white background, no text, no blur")}`}
-                alt="Ilustrasi Soal"
-                className="rounded-lg max-h-60 w-auto object-contain border border-slate-700 shadow-md bg-white"
-                loading="lazy"
-              />
-            </div>
-          )}
+          {q.imagePrompt && <ImageWithLoader prompt={q.imagePrompt} />}
           {q.type === 'multiple-choice' && q.options && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-sm">
               {q.options.map((option, i) => (
