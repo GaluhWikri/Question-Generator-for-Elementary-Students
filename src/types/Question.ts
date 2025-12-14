@@ -8,4 +8,5 @@ export interface Question {
   grade: string;
   difficulty: 'Easy' | 'Medium' | 'Hard';
   explanation?: string;
+  imagePrompt?: string; // Deskripsi gambar jika soal membutuhkan ilustrasi
 }

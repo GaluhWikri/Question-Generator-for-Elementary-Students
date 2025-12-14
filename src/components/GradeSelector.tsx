@@ -12,7 +12,7 @@ const grades = [
   { id: 'Kelas-3', name: 'Kelas 3', level: 'C3: Menerapkan & C4: Menganalisis ', icon: Users, color: 'from-purple-500 to-pink-500' },
   { id: 'Kelas-4', name: 'Kelas 4', level: 'C3: Menerapkan & C4: Menganalisis ', icon: Users, color: 'from-orange-500 to-red-500' },
   { id: 'Kelas-5', name: 'Kelas 5', level: 'C4: Menganalisis, C5: Mengevaluasi, & C6: Mencipta', icon: GraduationCap, color: 'from-yellow-500 to-orange-500' },
-  { id: 'Kelas-6', name: 'Kelas 6', level: 'C4: Menganalisis, C5: Mengevaluasi, & C6: Mencipta (Awal)', icon: GraduationCap, color: 'from-indigo-500 to-purple-500' },
+  { id: 'Kelas-6', name: 'Kelas 6', level: 'C4: Menganalisis, C5: Mengevaluasi, & C6: Mencipta', icon: GraduationCap, color: 'from-indigo-500 to-purple-500' },
 ];
 
 const GradeSelector: React.FC<GradeSelectorProps> = ({ selectedGrade, onGradeChange }) => {

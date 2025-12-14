@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Question } from '../types/Question';
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
+import { generateQuestionPDF } from '../lib/pdfExporter';
 import { Download, RefreshCw, Gauge, User, BarChart3, Eye, EyeOff, CheckCircle, Plus, X, Settings2 } from 'lucide-react';
 
 interface QuestionDisplayProps {
@@ -36,142 +37,19 @@ const QuestionDisplay = ({ questions, isGenerating, isAppending, onRegenerateQue
     instruction: ''
   });
 
-  const handleDownloadPDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;
-    const contentWidth = pageWidth - margin * 2;
-    let cursorY = 20;
+  const handleDownloadPDF = async () => {
+    // Memanggil helper external yang sudah kita buat
+    // Membuat status loading sederhana (opsional, tapi bagus untuk UX)
+    const btn = document.getElementById('btn-download-pdf');
+    if (btn) btn.innerText = "Mengunduh...";
 
-    // Helper: Wrap text
-    const wrapText = (text: string, width: number) => doc.splitTextToSize(text, width);
-
-    // Helper: Cek Page Break
-    const checkPageBreak = (neededHeight: number) => {
-      if (cursorY + neededHeight > pageHeight - margin) {
-        doc.addPage();
-        cursorY = margin;
-        return true;
-      }
-      return false;
-    };
-
-    // --- HALAMAN 1 (HEADER) ---
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("LATIHAN SOAL", pageWidth / 2, cursorY, { align: "center" });
-    cursorY += 10;
-
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Mata Pelajaran : ${subject}`, margin, cursorY);
-    cursorY += 5;
-    doc.text(`Kelas          : ${grade}`, margin, cursorY);
-    cursorY += 5;
-    doc.text(`Tanggal        : ${new Date().toLocaleDateString('id-ID')}`, margin, cursorY);
-    cursorY += 5;
-    doc.setLineWidth(0.5);
-    doc.line(margin, cursorY, pageWidth - margin, cursorY);
-    cursorY += 10;
-
-    // --- LOOP SOAL ---
-    questions.forEach((q, index) => {
-      doc.setFontSize(11);
-
-      // 1. Siapkan Teks Soal (Wrapped)
-      const qPrefix = `${index + 1}. `;
-      // Kurangi lebar sedikit agar tidak mepet kanan
-      const qLines = wrapText(q.question, contentWidth - 10);
-      const qHeight = qLines.length * 5; // Estimasi tinggi per baris ~5 unit
-
-      // 2. Siapkan Opsi (Jika ada)
-      let optionsRenderData: { text: any, height: number }[] = [];
-      let totalOptionsHeight = 0;
-
-      if (q.type === 'multiple-choice' && q.options) {
-        q.options.forEach((opt, i) => {
-          const optPrefix = `${String.fromCharCode(65 + i)}. `;
-          // Wrap tekst opsi. Beri indentasi 15 unit
-          const optLines = wrapText(opt, contentWidth - 20);
-          const optBlockHeight = optLines.length * 5;
-
-          optionsRenderData.push({
-            text: optLines,
-            height: optBlockHeight
-          });
-          totalOptionsHeight += optBlockHeight;
-        });
-      }
-
-      // 3. Cek apakah BLOCK soal ini muat?
-      const totalBlockHeight = qHeight + totalOptionsHeight + 10; // +10 space
-      checkPageBreak(totalBlockHeight);
-
-      // 4. Render Soal
-      doc.setFont("helvetica", "bold");
-      doc.text(qPrefix, margin, cursorY);
-
-      doc.setFont("helvetica", "normal");
-      // Render lines soal. Perhatikan: doc.text array, x, y akan render multiline otomatis.
-      // Kita perlu geser sedikit X-nya biar rapi dengan nomor.
-      doc.text(qLines, margin + 7, cursorY);
-      cursorY += qHeight + 2;
-
-      // 5. Render Opsi
-      if (q.type === 'multiple-choice') {
-        optionsRenderData.forEach((optData, i) => {
-          doc.text(`${String.fromCharCode(65 + i)}. `, margin + 12, cursorY);
-          doc.text(optData.text, margin + 18, cursorY);
-          cursorY += optData.height;
-        });
-      } else {
-        // Space untuk jawaban essay
-        cursorY += 5;
-      }
-
-      cursorY += 5; // Jarak antar nomor
+    await generateQuestionPDF({
+      questions,
+      subject,
+      grade
     });
 
-    // --- HALAMAN KUNCI JAWABAN ---
-    doc.addPage();
-    cursorY = margin;
-
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("KUNCI JAWABAN", pageWidth / 2, cursorY, { align: "center" });
-    cursorY += 15;
-
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-
-    questions.forEach((q, index) => {
-      // Ambil jawaban yang valid
-      const answerVal = q.correctAnswer || (q as any).answer || q.explanation || "Menunggu koreksi guru";
-      let answerTextRaw = "";
-
-      if (q.type === 'multiple-choice') {
-        if (typeof q.correctAnswer === 'number') {
-          answerTextRaw = String.fromCharCode(65 + q.correctAnswer);
-        } else {
-          // Kadang AI kasih string "0" atau "A"
-          answerTextRaw = String(answerVal);
-        }
-      } else {
-        answerTextRaw = String(answerVal);
-      }
-
-      const fullAnswerLine = `${index + 1}. ${answerTextRaw}`;
-      const answerLines = wrapText(fullAnswerLine, contentWidth);
-      const neededHeight = answerLines.length * 6;
-
-      checkPageBreak(neededHeight);
-
-      doc.text(answerLines, margin, cursorY);
-      cursorY += neededHeight + 2;
-    });
-
-    doc.save(`soal_${subject.replace(/\s/g, '_')}_kelas_${grade}.pdf`);
+    if (btn) btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-download w-4 h-4"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg> Unduh PDF'; // Kembalikan teks tombol (opsional)
   };
 
   const handleConfirmAdd = () => {
@@ -215,8 +93,8 @@ const QuestionDisplay = ({ questions, isGenerating, isAppending, onRegenerateQue
                       key={type}
                       onClick={() => setAddConfig({ ...addConfig, type })}
                       className={`px-3 py-2 rounded-lg text-sm transition-all ${addConfig.type === type
-                          ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
-                          : 'bg-slate-700 text-gray-400 hover:bg-slate-600'
+                        ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
+                        : 'bg-slate-700 text-gray-400 hover:bg-slate-600'
                         }`}
                     >
                       {type}
@@ -314,6 +192,17 @@ const QuestionDisplay = ({ questions, isGenerating, isAppending, onRegenerateQue
           <p className="font-semibold mb-3 md:mb-4 text-base md:text-lg">
             <span className="text-purple-400 mr-2">{index + 1}.</span>{q.question}
           </p>
+          {q.imagePrompt && (
+            <div className="mb-4 flex justify-center md:justify-start">
+              {/* Added enhance=true and specific style seeds to force better quality */}
+              <img
+                src={`https://image.pollinations.ai/prompt/${encodeURIComponent(q.imagePrompt + ", high quality, 4k, digital art, clear detailed vector, educational content, white background, no text, no blur")}`}
+                alt="Ilustrasi Soal"
+                className="rounded-lg max-h-60 w-auto object-contain border border-slate-700 shadow-md bg-white"
+                loading="lazy"
+              />
+            </div>
+          )}
           {q.type === 'multiple-choice' && q.options && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-sm">
               {q.options.map((option, i) => (

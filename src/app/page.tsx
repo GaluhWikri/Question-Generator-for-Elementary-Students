@@ -38,8 +38,8 @@ export default function Home() {
     }
 
     try {
-      // Di Next.js, API route ada di /api/generate relatif terhadap domain
-      const apiUrl = '/api/generate';
+      // Di Next.js, API route ada di /api relatif terhadap domain
+      const apiUrl = '/api';
 
       const response = await fetch(apiUrl, {
         method: 'POST',

@@ -60,15 +60,25 @@ Pandu setiap soal dengan prinsip:
 - **Komunikatif**: Percakapan sederhana (Greetings, Introduction, Asking Help).
 
 ### 4. ATURAN TEKNIS & OUTPUT (STRICT JSON)
-Output HANYA JSON valid.
+1.  **VISUAL CONTEXT (PENTING! HANYA JIKA DIMINTA)**: 
+    - **DEFAULT: JANGAN sertakan gambar (kosongkan field imagePrompt).**
+    - **KECUALI:** Jika di "Permintaan Khusus User" terdapat kata kunci permintaan gambar (contoh: "sertakan gambar", "dengan ilustrasi", "ada gambar geometri"), ATAU soal tersebut WAJIB visual (misal: "Tebak gambar bangun ruang ini").
+    - Jika User tidak meminta gambar, buatlah soal berbasis teks saja.
+2.  **Kualitas Image Prompt (Jika Terpaksa Ada)**:
+    - Deskripsi harus **SANGAT SPESIFIK**, **SEDERHANA**, dan **JELAS**.
+    - Gunakan kata kunci gaya visual: "flat vector", "white background", "minimalist", "clean lines", "educational illustration".
+    - Hindari detail rumit yang tidak perlu. Fokus pada objek utama soal.
+    - Contoh Bagus: "Single cartoon boy kicking a soccer ball, flat white background, minimal vector."
+3.  **Output HANYA JSON valid**.
 {
   "questions": [
     {
-      "type": "multiple-choice", // "fill-in-the-blank", "essay"
-      "question": "Narasi soal / pertanyaan...",
-      "options": ["A", "B", "C", "D"], // WAJIB untuk multiple-choice, HAPUS untuk lainnya
-      "correctAnswer": 0, // JIKA multiple-choice: index integer (0-3). JIKA essay/isian: String jawaban teks.
-      "explanation": "Penjelasan / Kunci Jawaban Detail"
+      "type": "multiple-choice", 
+      "question": "Narasi soal... (Boleh merujuk gambar)",
+      "options": ["A", "B", "C", "D"], // Jika "fill-in-the-blank", "essay", atau "multiple-choice"
+      "correctAnswer": 0, // Jika "fill-in-the-blank", "essay", atau "multiple-choice"
+      "explanation": "Penjelasan...", // Kunci Jawaban Detail
+      "imagePrompt": "Deskripsi detail dalam Bahasa Inggris. WAJIB DI-AKHIRI dengan: ', flat vector style, white background, no text, educational'" 
     }
   ]
 }

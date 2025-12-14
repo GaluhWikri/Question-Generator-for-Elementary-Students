@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Buffer } from "buffer";
-import { parsePdfBuffer } from "../../../lib/pdfHelper"; // Helper PDF
-import { parseDocxBuffer } from "../../../lib/docxHelper"; // Helper Word
-import { SYSTEM_PROMPT } from "../../../lib/promptGenerator"; // Helper Prompt
+// @ts-ignore
+import { parsePdfBuffer } from "@/lib/extractors/pdfHelper"; // Helper PDF
+import { parseDocxBuffer } from "@/lib/extractors/docxHelper"; // Helper Word
+import { SYSTEM_PROMPT } from "@/lib/promptGenerator"; // Helper Prompt
 
 export const maxDuration = 60; // Timeout deployment
 
