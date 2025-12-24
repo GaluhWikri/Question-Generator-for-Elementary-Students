@@ -2,9 +2,14 @@ import { jsPDF } from 'jspdf';
 import { Question } from '../types/Question';
 
 // Helper: Fetch Image to Base64
-const getImageBase64 = async (url: string): Promise<string | null> => {
+const getImageBase64 = async (url: string, apiKey?: string): Promise<string | null> => {
     try {
-        const response = await fetch(url);
+        const headers: HeadersInit = {};
+        if (apiKey) {
+            headers['Authorization'] = `Bearer ${apiKey}`;
+        }
+        const response = await fetch(url, { headers });
+        if (!response.ok) throw new Error(`Failed to fetch image: ${response.statusText}`);
         const blob = await response.blob();
         return new Promise((resolve) => {
             const reader = new FileReader();
@@ -95,8 +100,9 @@ export const generateQuestionPDF = async ({ questions, subject, grade }: PDFGene
         let imageBase64: string | null = null;
 
         if (q.imagePrompt) {
-            const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(q.imagePrompt + ", high quality, 4k, digital art, clear detailed vector, educational content, white background, no text, no blur")}`;
-            imageBase64 = await getImageBase64(imageUrl);
+            const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY;
+            const imageUrl = `https://gen.pollinations.ai/image/${encodeURIComponent(q.imagePrompt + " high quality, 4k, digital art, clear detailed vector, educational content, white background, no text, no blur")}?width=1024&height=1024&nologo=true&model=flux`;
+            imageBase64 = await getImageBase64(imageUrl, apiKey);
             if (imageBase64) {
                 imageHeight = 60; // Tinggi gambar fix di PDF
             }

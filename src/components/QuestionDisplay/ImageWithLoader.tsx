@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 interface ImageWithLoaderProps {
     prompt: string;
@@ -7,8 +7,54 @@ interface ImageWithLoaderProps {
 const ImageWithLoader = ({ prompt }: ImageWithLoaderProps) => {
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
+    const [imageSrc, setImageSrc] = useState<string | null>(null);
 
-    const imageUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt + ", high quality, 4k, digital art, clear detailed vector, educational content, white background, no text, no blur")}`;
+    const targetUrl = useMemo(() => {
+        return `https://gen.pollinations.ai/image/${encodeURIComponent(prompt + " high quality, 4k, digital art, clear detailed vector, educational content, white background, no text, no blur")}?width=1024&height=1024&nologo=true&model=flux`;
+    }, [prompt]);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const fetchImage = async () => {
+            setIsLoading(true);
+            setHasError(false);
+            try {
+                const apiKey = process.env.NEXT_PUBLIC_POLLINATIONS_API_KEY;
+                const headers: HeadersInit = {};
+                if (apiKey) {
+                    headers['Authorization'] = `Bearer ${apiKey}`;
+                }
+
+                const response = await fetch(targetUrl, { headers });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to load image: ${response.status}`);
+                }
+
+                const blob = await response.blob();
+                const objectUrl = URL.createObjectURL(blob);
+
+                if (isMounted) {
+                    setImageSrc(objectUrl);
+                    setIsLoading(false);
+                }
+            } catch (error) {
+                console.error("Image loading error:", error);
+                if (isMounted) {
+                    setHasError(true);
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        fetchImage();
+
+        return () => {
+            isMounted = false;
+            // Cleanup object URL if it exists (not strictly necessary for this simple case but good practice)
+        };
+    }, [targetUrl]);
 
     return (
         <div className="mb-4 flex flex-col items-center md:items-start">
@@ -30,13 +76,13 @@ const ImageWithLoader = ({ prompt }: ImageWithLoaderProps) => {
                 )}
 
                 {/* The Actual Image */}
-                <img
-                    src={imageUrl}
-                    alt="Ilustrasi Soal"
-                    className={`max-h-60 w-auto object-contain transition-opacity duration-500 ${isLoading ? 'opacity-0' : 'opacity-100'}`}
-                    onLoad={() => setIsLoading(false)}
-                    onError={() => { setIsLoading(false); setHasError(true); }}
-                />
+                {imageSrc && !isLoading && !hasError && (
+                    <img
+                        src={imageSrc}
+                        alt="Ilustrasi Soal"
+                        className="max-h-60 w-auto object-contain transition-opacity duration-500 opacity-100"
+                    />
+                )}
             </div>
         </div>
     );
