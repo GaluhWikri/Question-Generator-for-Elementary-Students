@@ -1,5 +1,5 @@
 import { Question } from '../../types/Question';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Circle } from 'lucide-react';
 import ImageWithLoader from './ImageWithLoader';
 
 interface QuestionItemProps {
@@ -10,44 +10,106 @@ interface QuestionItemProps {
 
 const QuestionItem = ({ question: q, index, showAnswers }: QuestionItemProps) => {
     return (
-        <div className="p-4 md:p-6 bg-slate-800/50 rounded-xl shadow-lg transition-all hover:bg-slate-800/80">
-            <p className="font-semibold mb-3 md:mb-4 text-base md:text-lg">
-                <span className="text-purple-400 mr-2">{index + 1}.</span>{q.question}
-            </p>
+        <div
+            className="question-card animate-fade-in-up"
+            style={{ animationDelay: `${index * 0.05}s` }}
+        >
+            {/* Question Header */}
+            <div className="flex items-start gap-4 mb-5">
+                <div className="question-number shrink-0">
+                    {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-medium text-white text-base md:text-lg leading-relaxed">
+                        {q.question}
+                    </p>
+                    {/* Question Type Badge */}
+                    <span className={`
+                        inline-block mt-3 px-2.5 py-1 rounded-lg text-xs font-medium
+                        ${q.type === 'multiple-choice' ? 'bg-blue-500/15 text-blue-400 border border-blue-500/20' :
+                            q.type === 'fill-in-the-blank' ? 'bg-orange-500/15 text-orange-400 border border-orange-500/20' :
+                                'bg-purple-500/15 text-purple-400 border border-purple-500/20'
+                        }
+                    `}>
+                        {q.type === 'multiple-choice' ? '📝 Pilihan Ganda' :
+                            q.type === 'fill-in-the-blank' ? '✏️ Isian Singkat' :
+                                '📖 Uraian'}
+                    </span>
+                </div>
+            </div>
 
+            {/* Image if exists */}
             {q.imagePrompt && <ImageWithLoader prompt={q.imagePrompt} />}
 
+            {/* Multiple Choice Options */}
             {q.type === 'multiple-choice' && q.options && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 text-sm">
-                    {q.options.map((option, i) => (
-                        <div key={i} className={`p-2 md:p-3 rounded-md border transition-all flex items-center justify-between ${showAnswers && i === q.correctAnswer ? 'bg-green-500/20 border-green-500 text-white' : 'bg-slate-700/50 border-slate-600 text-gray-300'}`}>
-                            <div className="flex-1">
-                                <span className={`font-mono mr-2 ${showAnswers && i === q.correctAnswer ? 'text-green-400' : 'text-gray-500'}`}>{String.fromCharCode(65 + i)}.</span>
-                                <span>{option}</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                    {q.options.map((option, i) => {
+                        const isCorrect = showAnswers && i === q.correctAnswer;
+                        return (
+                            <div
+                                key={i}
+                                className={`
+                                    relative p-3.5 md:p-4 rounded-xl border transition-all duration-300 flex items-center gap-3
+                                    ${isCorrect
+                                        ? 'bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border-emerald-500/40 shadow-lg shadow-emerald-500/10'
+                                        : 'bg-slate-800/50 border-slate-600/50 hover:border-slate-500/70'
+                                    }
+                                `}
+                            >
+                                {/* Option Letter Circle */}
+                                <div className={`
+                                    w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm shrink-0
+                                    ${isCorrect
+                                        ? 'bg-emerald-500/30 text-emerald-300'
+                                        : 'bg-slate-700/70 text-gray-400'
+                                    }
+                                `}>
+                                    {String.fromCharCode(65 + i)}
+                                </div>
+
+                                {/* Option Text */}
+                                <span className={`flex-1 text-sm ${isCorrect ? 'text-white font-medium' : 'text-gray-300'}`}>
+                                    {option}
+                                </span>
+
+                                {/* Correct Icon */}
+                                {isCorrect && (
+                                    <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 animate-scale-in" />
+                                )}
                             </div>
-                            {showAnswers && i === q.correctAnswer && (
-                                <CheckCircle className="w-4 h-4 md:w-5 md:h-5 text-green-400 shrink-0 ml-2" />
-                            )}
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
+            {/* Fill in Blank Answer */}
             {showAnswers && q.type === 'fill-in-the-blank' && (
-                <div className="mt-2">
-                    <p className="text-xs md:text-sm text-gray-400">Kunci Jawaban:</p>
-                    <p className="p-2 md:p-3 rounded-md bg-green-500/20 border border-green-500 text-white italic text-sm">
-                        {q.correctAnswer || (q as any).answer || q.explanation || "Jawaban tidak tersedia"}
+                <div className="mt-5 animate-fade-in">
+                    <p className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        Kunci Jawaban
                     </p>
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border border-emerald-500/30">
+                        <p className="text-emerald-300 font-medium">
+                            {q.correctAnswer || (q as any).answer || q.explanation || "Jawaban tidak tersedia"}
+                        </p>
+                    </div>
                 </div>
             )}
 
+            {/* Essay Answer */}
             {showAnswers && q.type === 'essay' && (
-                <div className="mt-2">
-                    <p className="text-xs md:text-sm text-gray-400">Panduan Jawaban:</p>
-                    <p className="p-2 md:p-3 rounded-md bg-green-500/20 border border-green-500 text-gray-300 text-sm">
-                        {q.correctAnswer || (q as any).answer || q.explanation || "Jawaban tidak tersedia"}
+                <div className="mt-5 animate-fade-in">
+                    <p className="text-xs font-medium text-gray-400 mb-2 flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />
+                        Panduan Jawaban
                     </p>
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/15 to-teal-500/10 border border-emerald-500/30">
+                        <p className="text-gray-300 text-sm leading-relaxed">
+                            {q.correctAnswer || (q as any).answer || q.explanation || "Jawaban tidak tersedia"}
+                        </p>
+                    </div>
                 </div>
             )}
         </div>

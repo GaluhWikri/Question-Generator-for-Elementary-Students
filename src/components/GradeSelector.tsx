@@ -1,5 +1,5 @@
 import React from 'react';
-import { GraduationCap, Users, Star } from 'lucide-react';
+import { Star, Check, Sparkles } from 'lucide-react';
 
 interface GradeSelectorProps {
   selectedGrade: string;
@@ -7,57 +7,164 @@ interface GradeSelectorProps {
 }
 
 const grades = [
-  { id: 'Kelas-1', name: 'Kelas 1', level: 'C1: Mengingat & C2: Memahami', icon: Star, color: 'from-green-500 to-teal-500' },
-  { id: 'Kelas-2', name: 'Kelas 2', level: 'C1: Mengingat & C2: Memahami', icon: Star, color: 'from-blue-500 to-cyan-500' },
-  { id: 'Kelas-3', name: 'Kelas 3', level: 'C3: Menerapkan & C4: Menganalisis ', icon: Users, color: 'from-purple-500 to-pink-500' },
-  { id: 'Kelas-4', name: 'Kelas 4', level: 'C3: Menerapkan & C4: Menganalisis ', icon: Users, color: 'from-orange-500 to-red-500' },
-  { id: 'Kelas-5', name: 'Kelas 5', level: 'C4: Menganalisis, C5: Mengevaluasi, & C6: Mencipta', icon: GraduationCap, color: 'from-yellow-500 to-orange-500' },
-  { id: 'Kelas-6', name: 'Kelas 6', level: 'C4: Menganalisis, C5: Mengevaluasi, & C6: Mencipta', icon: GraduationCap, color: 'from-indigo-500 to-purple-500' },
+  {
+    id: 'Kelas-1',
+    name: 'Kelas 1',
+    level: 'Mengingat & Memahami',
+    cognitive: 'C1 - C2',
+    gradient: 'from-green-500 to-emerald-400',
+    bgGlow: 'bg-green-500',
+    emoji: '🌱'
+  },
+  {
+    id: 'Kelas-2',
+    name: 'Kelas 2',
+    level: 'Mengingat & Memahami',
+    cognitive: 'C1 - C2',
+    gradient: 'from-cyan-500 to-blue-400',
+    bgGlow: 'bg-cyan-500',
+    emoji: '🌿'
+  },
+  {
+    id: 'Kelas-3',
+    name: 'Kelas 3',
+    level: 'Menerapkan & Menganalisis',
+    cognitive: 'C3 - C4',
+    gradient: 'from-purple-500 to-pink-400',
+    bgGlow: 'bg-purple-500',
+    emoji: '🌳'
+  },
+  {
+    id: 'Kelas-4',
+    name: 'Kelas 4',
+    level: 'Menerapkan & Menganalisis',
+    cognitive: 'C3 - C4',
+    gradient: 'from-orange-500 to-rose-400',
+    bgGlow: 'bg-orange-500',
+    emoji: '🎯'
+  },
+  {
+    id: 'Kelas-5',
+    name: 'Kelas 5',
+    level: 'Menganalisis, Mengevaluasi & Mencipta',
+    cognitive: 'C4 - C6',
+    gradient: 'from-yellow-500 to-amber-400',
+    bgGlow: 'bg-yellow-500',
+    emoji: '⭐'
+  },
+  {
+    id: 'Kelas-6',
+    name: 'Kelas 6',
+    level: 'Menganalisis, Mengevaluasi & Mencipta',
+    cognitive: 'C4 - C6',
+    gradient: 'from-indigo-500 to-violet-400',
+    bgGlow: 'bg-indigo-500',
+    emoji: '🏆'
+  },
 ];
 
 const GradeSelector: React.FC<GradeSelectorProps> = ({ selectedGrade, onGradeChange }) => {
   return (
-    <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-gray-700">
-      <div className="text-center mb-6 md:mb-8">
-        <h2 className="text-xl md:text-2xl font-bold text-white mb-2">Pilih Kelas</h2>
-        <p className="text-sm md:text-base text-gray-300">Tentukan tingkat kelas untuk menyesuaikan tingkat kesulitan soal</p>
+    <div className="glass-card p-6 md:p-10 animate-fade-in-up">
+      {/* Header */}
+      <div className="text-center mb-8 md:mb-12">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3">
+          Pilih <span className="gradient-text">Tingkat Kelas</span>
+        </h2>
+        <p className="text-gray-400 text-sm md:text-base max-w-lg mx-auto">
+          Tentukan tingkat kelas untuk menyesuaikan kompleksitas soal dengan kemampuan kognitif siswa
+        </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        {grades.map((grade) => {
-          const Icon = grade.icon;
+      {/* Grade Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
+        {grades.map((grade, index) => {
+          const isSelected = selectedGrade === grade.id;
+
           return (
             <button
               key={grade.id}
               onClick={() => onGradeChange(grade.id)}
               className={`
-                group relative p-4 md:p-6 rounded-xl transition-all duration-300 transform hover:scale-105
-                ${selectedGrade === grade.id
-                  ? 'bg-gradient-to-r ' + grade.color + ' shadow-2xl'
-                  : 'bg-gray-700/50 hover:bg-gray-600/50'
+                group relative p-5 md:p-6 rounded-2xl transition-all duration-500 transform text-left
+                ${isSelected
+                  ? 'scale-[1.02] -translate-y-1'
+                  : 'hover:scale-[1.02] hover:-translate-y-1'
                 }
               `}
+              style={{ animationDelay: `${index * 0.08}s` }}
             >
-              <div className="flex flex-col items-center">
-                <div className={`
-                  p-3 md:p-4 rounded-full mb-3 md:mb-4 transition-all duration-300
-                  ${selectedGrade === grade.id
-                    ? 'bg-white/20'
-                    : 'bg-gray-600 group-hover:bg-gray-500'
-                  }
-                `}>
-                  <Icon className="w-6 h-6 md:w-8 md:h-8 text-white" />
+              {/* Background */}
+              <div className={`
+                absolute inset-0 rounded-2xl transition-all duration-500
+                ${isSelected
+                  ? `bg-gradient-to-br ${grade.gradient} opacity-100`
+                  : 'bg-slate-800/60 group-hover:bg-slate-700/70'
+                }
+              `} />
+
+              {/* Glow Effect */}
+              <div className={`
+                absolute inset-0 rounded-2xl blur-xl transition-opacity duration-500
+                ${isSelected ? `${grade.bgGlow}/30 opacity-100` : 'opacity-0'}
+              `} />
+
+              {/* Border */}
+              <div className={`
+                absolute inset-0 rounded-2xl border-2 transition-all duration-300
+                ${isSelected
+                  ? 'border-white/30'
+                  : 'border-transparent group-hover:border-white/10'
+                }
+              `} />
+
+              {/* Content */}
+              <div className="relative z-10">
+                {/* Top Row: Icon + Name */}
+                <div className="flex items-center gap-4 mb-4">
+                  {/* Icon Container */}
+                  <div className={`
+                    w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 shrink-0
+                    ${isSelected
+                      ? 'bg-white/20 shadow-lg'
+                      : 'bg-slate-700/50 group-hover:bg-slate-600/60'
+                    }
+                  `}>
+                    <Star className={`w-7 h-7 ${isSelected ? 'text-white fill-white' : 'text-yellow-400 fill-yellow-400/30'}`} />
+                  </div>
+
+                  {/* Grade Name & Cognitive Level */}
+                  <div className="min-w-0">
+                    <h3 className={`
+                      text-lg md:text-xl font-bold transition-colors duration-300
+                      ${isSelected ? 'text-white' : 'text-gray-200 group-hover:text-white'}
+                    `}>
+                      {grade.name}
+                    </h3>
+                    <span className={`
+                      inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-medium
+                      ${isSelected ? 'bg-white/20 text-white' : 'bg-slate-600/50 text-gray-400'}
+                    `}>
+                      <Sparkles className="w-3 h-3" />
+                      {grade.cognitive}
+                    </span>
+                  </div>
                 </div>
-                <h3 className="text-lg md:text-xl font-bold text-white mb-1">
-                  {grade.name}
-                </h3>
-                <p className="text-xs md:text-sm text-gray-300">
+
+                {/* Level Description */}
+                <p className={`
+                  text-sm leading-relaxed transition-colors duration-300
+                  ${isSelected ? 'text-white/80' : 'text-gray-400 group-hover:text-gray-300'}
+                `}>
                   {grade.level}
                 </p>
               </div>
 
-              {selectedGrade === grade.id && (
-                <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-white/10 to-transparent pointer-events-none" />
+              {/* Selection Check */}
+              {isSelected && (
+                <div className="absolute top-4 right-4 z-20 w-7 h-7 bg-white rounded-full flex items-center justify-center shadow-lg animate-scale-in">
+                  <Check className="w-4 h-4 text-slate-800" />
+                </div>
               )}
             </button>
           );

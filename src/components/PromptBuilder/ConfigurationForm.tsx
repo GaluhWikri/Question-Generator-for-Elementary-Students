@@ -1,5 +1,5 @@
 import React from 'react';
-import { Hash, Gauge, ListChecks, Lightbulb } from 'lucide-react';
+import { Hash, Gauge, ListChecks, Lightbulb, Sparkles } from 'lucide-react';
 
 interface ConfigurationFormProps {
     questionCount: number;
@@ -24,12 +24,18 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({
     handleDifficultyChange
 }) => {
     return (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+
             {/* Question Count */}
-            <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <Hash className="w-5 h-5 md:w-6 md:h-6 text-blue-400" />
-                    <label className="text-white font-semibold text-sm md:text-base">Jumlah Soal</label>
+            <div className="glass-card-sm p-5 md:p-6">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                        <Hash className="w-5 h-5 text-blue-400" />
+                    </div>
+                    <div>
+                        <label className="text-white font-semibold text-sm block">Jumlah Soal</label>
+                        <span className="text-xs text-gray-500">Min 3, Max 20</span>
+                    </div>
                 </div>
                 <div className="flex items-center gap-4">
                     <input
@@ -38,60 +44,82 @@ const ConfigurationForm: React.FC<ConfigurationFormProps> = ({
                         max="20"
                         value={questionCount}
                         onChange={(e) => setQuestionCount(Number(e.target.value))}
-                        className="flex-1 h-2 bg-gray-600 rounded-lg appearance-none cursor-pointer"
+                        className="flex-1"
                     />
-                    <span className="text-white font-bold text-lg w-8">{questionCount}</span>
+                    <div className="w-14 h-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 flex items-center justify-center">
+                        <span className="text-white font-bold text-lg">{questionCount}</span>
+                    </div>
                 </div>
             </div>
 
             {/* Difficulty */}
-            <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <Gauge className="w-5 h-5 md:w-6 md:h-6 text-green-400" />
-                    <label className="text-white font-semibold text-sm md:text-base">Tingkat Kesulitan</label>
+            <div className="glass-card-sm p-5 md:p-6">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                        <Gauge className="w-5 h-5 text-green-400" />
+                    </div>
+                    <div>
+                        <label className="text-white font-semibold text-sm block">Tingkat Kesulitan</label>
+                        <span className="text-xs text-gray-500">Sesuai kemampuan siswa</span>
+                    </div>
                 </div>
                 <select
                     value={difficulty}
                     onChange={handleDifficultyChange}
-                    className="w-full p-2 md:p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm md:text-base"
+                    className="form-input form-select"
                 >
-                    <option value="easy">Mudah</option>
-                    <option value="medium">Sedang</option>
-                    <option value="hard">Sulit</option>
-                    <option value="mixed">Campur</option>
+                    <option value="easy">🟢 Mudah</option>
+                    <option value="medium">🟡 Sedang</option>
+                    <option value="hard">🔴 Sulit</option>
+                    <option value="mixed">🎨 Campur</option>
                 </select>
             </div>
 
             {/* Question Type */}
-            <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <ListChecks className="w-5 h-5 md:w-6 md:h-6 text-orange-400" />
-                    <label className="text-white font-semibold text-sm md:text-base">Jenis Soal</label>
+            <div className="glass-card-sm p-5 md:p-6">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500/20 flex items-center justify-center">
+                        <ListChecks className="w-5 h-5 text-orange-400" />
+                    </div>
+                    <div>
+                        <label className="text-white font-semibold text-sm block">Jenis Soal</label>
+                        <span className="text-xs text-gray-500">Format jawaban</span>
+                    </div>
                 </div>
                 <select
                     value={questionType}
                     onChange={(e) => setQuestionType(e.target.value)}
-                    className="w-full p-2 md:p-3 bg-gray-600 border border-gray-500 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm md:text-base"
+                    className="form-input form-select"
                 >
-                    <option value="multiple-choice">Pilihan Ganda</option>
-                    <option value="fill-blank">Isian Singkat</option>
-                    <option value="essay">Uraian/Essay</option>
+                    <option value="multiple-choice">📝 Pilihan Ganda</option>
+                    <option value="fill-blank">✏️ Isian Singkat</option>
+                    <option value="essay">📖 Uraian/Essay</option>
                 </select>
             </div>
 
             {/* Topic */}
-            <div className="bg-gray-700/50 rounded-xl p-4 md:p-6">
-                <div className="flex items-center gap-3 mb-4">
-                    <Lightbulb className="w-5 h-5 md:w-6 md:h-6 text-yellow-400" />
-                    <label className="text-white font-semibold text-sm md:text-base">Topik Khusus (Opsional)</label>
+            <div className="glass-card-sm p-5 md:p-6">
+                <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+                        <Lightbulb className="w-5 h-5 text-yellow-400" />
+                    </div>
+                    <div>
+                        <label className="text-white font-semibold text-sm block">Topik Khusus</label>
+                        <span className="text-xs text-gray-500">Opsional</span>
+                    </div>
                 </div>
-                <input
-                    type="text"
-                    value={topic}
-                    onChange={(e) => setTopic(e.target.value)}
-                    placeholder="Contoh: Penjumlahan, Membaca, dll."
-                    className="w-full p-2 md:p-3 bg-gray-600 border border-gray-500 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm md:text-base"
-                />
+                <div className="relative">
+                    <input
+                        type="text"
+                        value={topic}
+                        onChange={(e) => setTopic(e.target.value)}
+                        placeholder="Contoh: Penjumlahan, Membaca, dll."
+                        className="form-input pr-10"
+                    />
+                    {topic && (
+                        <Sparkles className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400" />
+                    )}
+                </div>
             </div>
         </div>
     );

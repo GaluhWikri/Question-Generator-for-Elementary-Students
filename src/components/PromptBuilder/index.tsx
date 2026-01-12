@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageSquare } from 'lucide-react';
+import { Settings, BookOpen, GraduationCap } from 'lucide-react';
 import ConfigurationForm from './ConfigurationForm';
 import MaterialUploader from './MaterialUploader';
 
@@ -11,8 +11,8 @@ export interface PromptBuilderProps {
     onMaterialDataChange: (data: { content: string, type: string } | null) => void;
     fileName: string;
     onFileNameChange: (name: string) => void;
-    selectedSubject: string; // BARU
-    selectedGrade: string;   // BARU
+    selectedSubject: string;
+    selectedGrade: string;
 }
 
 const PromptBuilder: React.FC<PromptBuilderProps> = ({
@@ -25,7 +25,6 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
     selectedSubject,
     selectedGrade
 }) => {
-    // ... (state logic tetap sama)
     const [questionCount, setQuestionCount] = useState(5);
     const [difficulty, setDifficulty] = useState('medium');
     const [questionType, setQuestionType] = useState('multiple-choice');
@@ -47,7 +46,6 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
 
         const displayDifficulty = difficultyMap[difficulty] || difficulty;
 
-        // PERBAIKAN: Masukkan Subject dan Kelas ke dalam prompt agar AI lebih spesifik
         let prompt = `Buatkan ${questionCount} soal ${typeMap[questionType]} untuk ${selectedGrade} mata pelajaran ${selectedSubject} dengan tingkat kesulitan ${displayDifficulty}.`;
 
         if (topic) {
@@ -73,25 +71,31 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
     }
 
     return (
-        <div className="bg-gray-800/50 backdrop-blur-sm rounded-2xl p-4 md:p-8 border border-gray-700">
+        <div className="glass-card p-6 md:p-10 animate-fade-in-up">
             {/* Header */}
-            <div className="text-center mb-6 md:mb-8">
-                <div className="flex items-center justify-center gap-3 mb-2 md:mb-4">
-                    <MessageSquare className="w-6 h-6 md:w-8 md:h-8 text-purple-400" />
-                    <h2 className="text-xl md:text-2xl font-bold text-white">Buat Prompt Soal</h2>
+            <div className="text-center mb-8 md:mb-10">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/20 mb-4">
+                    <Settings className="w-8 h-8 text-purple-400" />
                 </div>
+                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-white mb-3">
+                    Konfigurasi <span className="gradient-text">Soal</span>
+                </h2>
 
-                {/* INFO BAR BARU */}
-                <div className="flex flex-wrap items-center justify-center gap-2 mb-2">
-                    <span className="px-3 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-full text-sm font-medium">
+                {/* Subject & Grade Tags */}
+                <div className="flex flex-wrap items-center justify-center gap-3 mb-4 mt-5">
+                    <span className="tag tag-purple">
+                        <BookOpen className="w-4 h-4" />
                         {selectedSubject}
                     </span>
-                    <span className="px-3 py-1 bg-green-500/20 text-green-300 border border-green-500/30 rounded-full text-sm font-medium">
+                    <span className="tag tag-cyan">
+                        <GraduationCap className="w-4 h-4" />
                         {selectedGrade}
                     </span>
                 </div>
 
-                <p className="text-sm md:text-base text-gray-300">Sesuaikan detail soal yang ingin dibuat</p>
+                <p className="text-gray-400 text-sm md:text-base max-w-md mx-auto">
+                    Sesuaikan jumlah, tipe, dan tingkat kesulitan soal sesuai kebutuhan
+                </p>
             </div>
 
             {/* Form Configuration */}
@@ -106,6 +110,9 @@ const PromptBuilder: React.FC<PromptBuilderProps> = ({
                 setTopic={setTopic}
                 handleDifficultyChange={handleDifficultyChange}
             />
+
+            {/* Divider */}
+            <div className="divider" />
 
             {/* Material Uploader */}
             <MaterialUploader
